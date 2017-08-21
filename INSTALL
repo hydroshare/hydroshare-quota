@@ -1,0 +1,37 @@
+Use the following steps for only CentOS 7.x and iRODS 4.2.x or later
+
++ Use cmake on irods-externals-cmake package to run: cmake . (you should be installed other *-devel packages to finish this step)
+
++ Run: “make package”  to make hydroshare-quota-microservices.rpm package
+
++ rpm -Uvh hydroshare-quota-microservices.rpm
+
++ modify all values on /etc/irods/hydroshare.re to adapt with your server
+
++ edit /etc/irods/server_config.json then change:
+
+"re_rulebase_set": [
+         "core"
+],
+
+To 
+
+"re_rulebase_set": [
+         "hydroshare,core"
+],
+
++ my msi(s) use rods account to work, you have to grant permission to this user in HydroShare Root Dir
+     ichmod  –r  –M  inherit  <HydroShare Root Dir>
+     ichmod  –r  –M  write   rods   <HydroShare Root Dir>
+
++ set “quotaUserName” AVU to the top level directories of HS users on <HydroShare Root Dir>
+     imeta  set -C <HydroShare Root Dir>/291823725653fea98273      quotaUserName      peter
+...
+imeta  set -C <HydroShare Root Dir>/291823725653fea98273      quotaUserName      john
+
++ set quota hard-limit on the iRODS user which defined on hydroshare.re
+imeta  set -u <iRODS user>    “peter-quota”     25000000000      (20GB x 125% for peter on iRODS layer)
+...
+imeta  set -u <iRODS user>    “john-quota”      0                (john is unlimited on iRODS layer)
+
+
