@@ -44,8 +44,8 @@ int msiHSResetQuotaDir(msParam_t* _string_param,
                        msParam_t* _string_param2, 
                        msParam_t* _string_param3, ruleExecInfo_t* _rei ) {
 
-    char *dirPath = parseMspForStr( _string_param );
-    if( !dirPath ) {
+    char *hydroshareRootPath = parseMspForStr( _string_param );
+    if( !hydroshareRootPath ) {
         std::cout << "null PATH" << std::endl;
         return SYS_INVALID_INPUT_PARAM;
     }
@@ -64,15 +64,8 @@ int msiHSResetQuotaDir(msParam_t* _string_param,
 
     rodsOpen();
 
-    char *userName = getDirAVU(dirPath, quotaHolderAVU);
-
-    if (strcmp(userName, EMPTY) != 0) {
-        long long dirSize = reScanQuotaDir(dirPath, userName, quotaHolderAVU);
-        char * tmpSize = lltostr(dirSize);
-        char * avuUsage = concat(userName, usageSize);
-        setAVU("-u", rodsUser, avuUsage, tmpSize);
-        delete[] avuUsage, delete[] tmpSize;
-    }
+    resetRootDir (hydroshareRootPath, rodsUser, quotaHolderAVU);
+    reScanRootDir(hydroshareRootPath, rodsUser, quotaHolderAVU);
 
     rodsClose();
 

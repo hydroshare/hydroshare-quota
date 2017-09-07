@@ -10,8 +10,12 @@ char *usageQuota     = "-quota";
 //---------------------------------------------------------
 
 char* concat(const char *s1, const char *s2);
+char * lltostr(long long num);
 
 long long getRodsFileSize(char *srcPath);
+
+char * getDirAVU( char *name, char *attrName);
+char * getUserAVU( char *name, char *attrName);
 
 int setAVU(char *objType, char *objName, char *attrName, char *attrValue);
 
@@ -19,6 +23,7 @@ void _debug(char *str) {
         std::cout << " __DEBUG__: " << str << std::endl;
 }
 
+//---------------------------------------------------------
 void _debug(long long val) {
         std::cout << " __DEBUG__: " << val << std::endl;
 }
@@ -49,6 +54,58 @@ long long reScanQuotaDir(char * dirPath, char * userName, char * quotaHolderAVU)
     }
     rclCloseCollection( &collHandle );
     return dirSize;
+}
+
+//---------------------------------------------------------
+void resetRootDir(char * dirPath, char * rodsUser, char * quotaHolderAVU) {
+    long long dirSize = 0;
+    int status;
+    int queryFlags;
+    collHandle_t collHandle;
+    collEnt_t collEnt;
+
+    queryFlags = DATA_QUERY_FIRST_FG;
+
+    char *emptySize = "0";
+
+    status = rclOpenCollection( conn, dirPath, queryFlags, &collHandle );
+    while ( ( status = rclReadCollection( conn, &collHandle, &collEnt ) ) >= 0 ) {
+        if ( collEnt.objType == COLL_OBJ_T ) {
+            char *userName = getDirAVU(collEnt.collName, quotaHolderAVU);
+//	    std::cout << " __DEBUG__: " << collEnt.collName << ":" << userName << std::endl;
+            if (strcmp(userName, EMPTY) != 0) {
+                char *avuUsage = concat(userName, usageSize);
+                setAVU("-u", rodsUser, avuUsage, emptySize);
+                delete[] avuUsage; delete[] userName;
+            }
+        }
+    }
+    rclCloseCollection( &collHandle );
+}
+
+//---------------------------------------------------------
+void reScanRootDir(char * dirPath, char * rodsUser, char * quotaHolderAVU) {
+    long long dirSize = 0;
+    int status;
+    int queryFlags;
+    collHandle_t collHandle;
+    collEnt_t collEnt;
+
+    queryFlags = DATA_QUERY_FIRST_FG;
+
+    status = rclOpenCollection( conn, dirPath, queryFlags, &collHandle );
+    while ( ( status = rclReadCollection( conn, &collHandle, &collEnt ) ) >= 0 ) {
+        if ( collEnt.objType == COLL_OBJ_T ) {
+            char *userName = getDirAVU(collEnt.collName, quotaHolderAVU);
+            if (strcmp(userName, EMPTY) != 0) {
+                char *avuUsage = concat(userName, usageSize);
+                char *tmpSize  = lltostr(strtoll(getUserAVU(rodsUser, avuUsage), 0, 0) + reScanQuotaDir(collEnt.collName, userName, quotaHolderAVU));
+                setAVU("-u", rodsUser, avuUsage, tmpSize);
+                delete[] avuUsage; delete[] userName; delete[] tmpSize;
+            }
+        }
+    }
+    rclCloseCollection( &collHandle );
 }
 
 //---------------------------------------------------------
