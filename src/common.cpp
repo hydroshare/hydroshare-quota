@@ -29,7 +29,7 @@ void _debug(long long val) {
 }
 
 //---------------------------------------------------------
-long long reScanQuotaDir(char * dirPath, char * userName, char * quotaHolderAVU) {
+long long reScanDirUsage(char * dirPath) {
     long long dirSize = 0;
     int status;
     int queryFlags;
@@ -45,11 +45,11 @@ long long reScanQuotaDir(char * dirPath, char * userName, char * quotaHolderAVU)
             char *t1 = concat(dirPath, "/");
             char *t2 = concat(t1, collEnt.dataName);
             dirSize = dirSize + getRodsFileSize(t2);
-            setAVU("-d", t2, quotaHolderAVU, userName);
+//            setAVU("-d", t2, quotaHolderAVU, userName);
 	    delete[] t2; delete[] t1;
         }
         else {
-            dirSize = dirSize + reScanQuotaDir(collEnt.collName, userName, quotaHolderAVU);
+            dirSize = dirSize + reScanDirUsage(collEnt.collName);
         }
     }
     rclCloseCollection( &collHandle );
@@ -99,7 +99,7 @@ void reScanRootDir(char * dirPath, char * rodsUser, char * quotaHolderAVU) {
             char *userName = getDirAVU(collEnt.collName, quotaHolderAVU);
             if (strcmp(userName, EMPTY) != 0) {
                 char *avuUsage = concat(userName, usageSize);
-                char *tmpSize  = lltostr(strtoll(getUserAVU(rodsUser, avuUsage), 0, 0) + reScanQuotaDir(collEnt.collName, userName, quotaHolderAVU));
+                char *tmpSize  = lltostr(strtoll(getUserAVU(rodsUser, avuUsage), 0, 0) + reScanDirUsage(collEnt.collName));
                 setAVU("-u", rodsUser, avuUsage, tmpSize);
                 delete[] avuUsage; delete[] userName; delete[] tmpSize;
             }

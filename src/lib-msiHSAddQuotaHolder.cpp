@@ -46,8 +46,8 @@ int msiHSAddQuotaHolder(msParam_t* _string_param,
                         msParam_t* _string_param3, 
                         ruleExecInfo_t* _rei ) {
 
-    char *filePath = parseMspForStr( _string_param );
-    if( !filePath ) {
+    char *dirPath = parseMspForStr( _string_param );
+    if( !dirPath ) {
         std::cout << "null FILE PATH" << std::endl;
         return SYS_INVALID_INPUT_PARAM;
     }
@@ -65,12 +65,18 @@ int msiHSAddQuotaHolder(msParam_t* _string_param,
     }
 
     rodsOpen();
+    char *avuOwner = concat(newOwner, usageSize);
 
-    int result = increaseUsage(filePath, rodsUser, newOwner);
+    long long dirUsage  = reScanDirUsage(dirPath);
+    long long userUsage = strtoll(getUserAVU(rodsUser, avuOwner), 0, 0) + dirUsage;
+
+    if (userUsage < 0) userUsage = 0;
+
+    setAVU("-u", rodsUser, avuOwner, lltostr(userUsage));
 
     rodsClose();
 
-    return result;
+    return 0;
 }
 
 //---------------------------------------------------------

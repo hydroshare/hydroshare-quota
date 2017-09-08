@@ -12,7 +12,7 @@ acPostProcForPut () {
 }
 
 acPostProcForModifyAVUMetadata (*cmd, *objType, *objPath, *avuName, *avuValue, *avuUnit) {
-    if ((*cmd == "set") && (*objType == "-d") && (*avuName == "quotaUserName"))
+    if (((*cmd == "set") || (*cmd == "add")) && (*objType == "-C") && (*avuName == "quotaUserName"))
     then {
         msiHSAddQuotaHolder(*objPath, "cuahsi2UserProxy#hydroshareuserZone", *avuValue);
     }
@@ -24,7 +24,7 @@ acPostProcForModifyAVUMetadata (*cmd, *objType, *objPath, *avuName, *avuValue, *
 }
 
 acPreProcForModifyAVUMetadata (*cmd, *objType, *objPath, *avuName, *avuValue, *avuUnit) {
-    if ((*cmd == "rm") && (*objType == "-d") && (*avuName == "quotaUserName"))
+    if ((*cmd == "rm") && (*objType == "-C") && (*avuName == "quotaUserName"))
     then {
         msiHSRemoveQuotaHolder(*objPath, "cuahsi2UserProxy#hydroshareuserZone", *avuValue);
     }

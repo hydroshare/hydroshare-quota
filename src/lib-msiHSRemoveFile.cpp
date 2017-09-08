@@ -64,10 +64,14 @@ int msiHSRemoveFile(msParam_t* _string_param,
     }
 
     int result = 0;
+
+    char quotaHolder[MAX_NAME_LEN];
+
     rodsOpen();
 
-    char *quotaHolder = getFileAVU(filePath, quotaHolderAVU);
-    if (strcmp(quotaHolder, EMPTY) != 0) {
+    bool haveQuotaHolder = getParentQuotaHolder(filePath, quotaHolderAVU, quotaHolder);
+
+    if (haveQuotaHolder) {
         result = decreaseUsage(filePath, rodsUser, quotaHolder);
     }
     else {
