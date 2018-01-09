@@ -51,11 +51,19 @@ int msiHSRemoveQuotaHolder(msParam_t* _string_param,
         return SYS_INVALID_INPUT_PARAM;
     }
 
-    char *rodsUser = parseMspForStr( _string_param2 );
-    if(  !rodsUser ) {
-        std::cout << "null RODS USER" << std::endl;
+    char *rootDir = parseMspForStr( _string_param2 );
+    if( !rootDir ) {
+        std::cout << "null rootDir" << std::endl;
         return SYS_INVALID_INPUT_PARAM;
     }
+
+    char *pos = strstr(dirPath, rootDir);
+    if ((pos == NULL) || (pos != dirPath)) {
+        rodsLog(LOG_ERROR, "msiHSRemoteQuotaHolder: ignore %s: out of root: %s", dirPath, rootDir);
+        return 0;
+    }
+
+    char *rodsUser = concat(strpart(dirPath, "/", 4), concat("#", strpart(dirPath, "/", 2)));
 
     char *oldOwner = parseMspForStr( _string_param3 );
     if(  !oldOwner ) {

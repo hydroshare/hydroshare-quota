@@ -1,24 +1,24 @@
 
 acDataDeletePolicy () {
-    msiHSRemoveFile($objPath, "cuahsi2UserProxy#hydroshareuserZone", "quotaUserName"); 
+    msiHSRemoveFile($objPath, "/hydroshareZone/home", "quotaUserName"); 
 }
 
 acPostProcForCopy () {
-    msiHSAddNewFile($objPath, "cuahsi2UserProxy#hydroshareuserZone", "quotaUserName"); 
+    msiHSAddNewFile($objPath, "/hydroshareZone/home", "quotaUserName"); 
 }
 
 acPostProcForPut () {
-    msiHSAddNewFile($objPath, "cuahsi2UserProxy#hydroshareuserZone", "quotaUserName"); 
+    msiHSAddNewFile($objPath, "/hydroshareZone/home", "quotaUserName"); 
 }
 
 acPostProcForModifyAVUMetadata (*cmd, *objType, *objPath, *avuName, *avuValue, *avuUnit) {
     if (((*cmd == "set") || (*cmd == "add")) && (*objType == "-C") && (*avuName == "quotaUserName"))
     then {
-        msiHSAddQuotaHolder(*objPath, "cuahsi2UserProxy#hydroshareuserZone", *avuValue);
+        msiHSAddQuotaHolder(*objPath, "/hydroshareZone/home", *avuValue);
     }
     if (((*cmd == "set")  || (*cmd == "add")) && (*objType == "-C") && (*avuName == "resetQuotaDir"))
     then {
-        msiHSResetQuotaDir(*objPath, "cuahsi2UserProxy#hydroshareuserZone", "quotaUserName");
+        msiHSResetQuotaDir(*objPath, "/hydroshareZone/home", "quotaUserName");
     }
 
 }
@@ -26,7 +26,7 @@ acPostProcForModifyAVUMetadata (*cmd, *objType, *objPath, *avuName, *avuValue, *
 acPreProcForModifyAVUMetadata (*cmd, *objType, *objPath, *avuName, *avuValue, *avuUnit) {
     if ((*cmd == "rm") && (*objType == "-C") && (*avuName == "quotaUserName"))
     then {
-        msiHSRemoveQuotaHolder(*objPath, "cuahsi2UserProxy#hydroshareuserZone", *avuValue);
+        msiHSRemoveQuotaHolder(*objPath, "/hydroshareZone/home", *avuValue);
     }
 }
 

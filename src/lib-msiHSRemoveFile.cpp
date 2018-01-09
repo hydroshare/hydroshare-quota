@@ -51,11 +51,19 @@ int msiHSRemoveFile(msParam_t* _string_param,
         return SYS_INVALID_INPUT_PARAM;
     }
 
-    char *rodsUser = parseMspForStr( _string_param2 );
-    if(  !rodsUser ) {
-        std::cout << "null RODS USER" << std::endl;
+    char *rootDir = parseMspForStr( _string_param2 );
+    if( !rootDir ) {
+        std::cout << "null rootDir" << std::endl;
         return SYS_INVALID_INPUT_PARAM;
     }
+
+    char *pos = strstr(filePath, rootDir);
+    if ((pos == NULL) || (pos != filePath)) {
+        rodsLog(LOG_ERROR, "msiHSRemoteFile: ignore %s: out of root: %s", filePath, rootDir);
+        return 0;
+    }
+
+    char *rodsUser = concat(strpart(filePath, "/", 4), concat("#", strpart(filePath, "/", 2)));
 
     char *quotaHolderAVU = parseMspForStr( _string_param3 );
     if( !quotaHolderAVU ) {

@@ -51,11 +51,19 @@ int msiHSAddNewFile(msParam_t* _string_param,
         return SYS_INVALID_INPUT_PARAM;
     }
 
-    char *rodsUser = parseMspForStr( _string_param2 );
-    if( !rodsUser ) {
-        std::cout << "null rodsUser" << std::endl;
+    char *rootDir = parseMspForStr( _string_param2 );
+    if( !rootDir ) {
+        std::cout << "null rootDir" << std::endl;
         return SYS_INVALID_INPUT_PARAM;
     }
+
+    char *pos = strstr(newPath, rootDir);
+    if ((pos == NULL) || (pos != newPath)) {
+        rodsLog(LOG_ERROR, "msiHSAddNewFile: ignore %s: out of root: %s", newPath, rootDir);
+        return 0;
+    }
+
+    char *rodsUser = concat(strpart(newPath, "/", 4), concat("#", strpart(newPath, "/", 2)));
 
     char *quotaHolderAVU = parseMspForStr( _string_param3 );
     if( !quotaHolderAVU ) {

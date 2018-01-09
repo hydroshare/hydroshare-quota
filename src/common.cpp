@@ -480,6 +480,23 @@ char* concat(const char *s1, const char *s2)
 }
 
 //---------------------------------------------------------
+char* strpart(const char* str, const char* delimit, int pos) {
+    char *part, *token, *tofree, *string;
+    int i = 0;
+    tofree = string = strdup(str);
+    part = NULL;
+    while ((token = strsep(&string, "/")) != NULL) {
+        i++;
+        if (i == pos) {
+            part = strdup(token);
+            break;
+        }
+    }
+    delete[] tofree;
+    return part;
+}
+
+//---------------------------------------------------------
 bool getParentQuotaHolder(char *dirPath, char * quotaHolderAVU, char * quotaHolder) {
 
     char myColl[MAX_NAME_LEN], myData[MAX_NAME_LEN], srcPath[MAX_NAME_LEN];
