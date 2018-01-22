@@ -45,7 +45,6 @@ long long reScanDirUsage(char * dirPath) {
             char *t1 = concat(dirPath, "/");
             char *t2 = concat(t1, collEnt.dataName);
             dirSize = dirSize + getRodsFileSize(t2);
-//            setAVU("-d", t2, quotaHolderAVU, userName);
 	    delete[] t2; delete[] t1;
         }
         else {
@@ -57,7 +56,7 @@ long long reScanDirUsage(char * dirPath) {
 }
 
 //---------------------------------------------------------
-void resetRootDir(char * dirPath, char * rodsUser, char * quotaHolderAVU) {
+void resetRootDir(char * dirPath, char * bags, char * quotaHolderAVU) {
     long long dirSize = 0;
     int status;
     int queryFlags;
@@ -75,7 +74,7 @@ void resetRootDir(char * dirPath, char * rodsUser, char * quotaHolderAVU) {
 //	    std::cout << " __DEBUG__: " << collEnt.collName << ":" << userName << std::endl;
             if (strcmp(userName, EMPTY) != 0) {
                 char *avuUsage = concat(userName, usageSize);
-                setAVU("-u", rodsUser, avuUsage, emptySize);
+                setAVU("-C", bags, avuUsage, emptySize);
                 delete[] avuUsage; delete[] userName;
             }
         }
@@ -84,7 +83,7 @@ void resetRootDir(char * dirPath, char * rodsUser, char * quotaHolderAVU) {
 }
 
 //---------------------------------------------------------
-void reScanRootDir(char * dirPath, char * rodsUser, char * quotaHolderAVU) {
+void reScanRootDir(char * dirPath, char * bags, char * quotaHolderAVU) {
     long long dirSize = 0;
     int status;
     int queryFlags;
@@ -99,8 +98,8 @@ void reScanRootDir(char * dirPath, char * rodsUser, char * quotaHolderAVU) {
             char *userName = getDirAVU(collEnt.collName, quotaHolderAVU);
             if (strcmp(userName, EMPTY) != 0) {
                 char *avuUsage = concat(userName, usageSize);
-                char *tmpSize  = lltostr(strtoll(getUserAVU(rodsUser, avuUsage), 0, 0) + reScanDirUsage(collEnt.collName));
-                setAVU("-u", rodsUser, avuUsage, tmpSize);
+                char *tmpSize  = lltostr(strtoll(getDirAVU(bags, avuUsage), 0, 0) + reScanDirUsage(collEnt.collName));
+                setAVU("-C", bags, avuUsage, tmpSize);
                 delete[] avuUsage; delete[] userName; delete[] tmpSize;
             }
         }
@@ -522,27 +521,27 @@ bool getParentQuotaHolder(char *dirPath, char * quotaHolderAVU, char * quotaHold
 }
 
 //---------------------------------------------------------
-int decreaseUsage(char * filePath, char * rodsUser, char * oldOwner) {
+int decreaseUsage(char * filePath, char * bags, char * oldOwner) {
 
     long long fileSize = getRodsFileSize(filePath);
     if (fileSize <= 0) return fileSize;
 
     char *avuOwner = concat(oldOwner, usageSize);
-    long long userNewSize = strtoll(getUserAVU(rodsUser, avuOwner), 0, 0) - fileSize;
+    long long userNewSize = strtoll(getDirAVU(bags, avuOwner), 0, 0) - fileSize;
 
     if (userNewSize < 0) userNewSize = 0;
 
-    int result = setAVU("-u", rodsUser, avuOwner, lltostr(userNewSize));
+    int result = setAVU("-C", bags, avuOwner, lltostr(userNewSize));
     delete[] avuOwner;
     if (result != 0) {
-        rodsLog(LOG_ERROR, "removeUsage remove %s got error %d [RODS user level]", rodsUser, result);
+        rodsLog(LOG_ERROR, "removeUsage remove %s got error %d [RODS user level]", bags, result);
     }
 
     return result;
 }
 
 //---------------------------------------------------------
-int increaseUsage(char * filePath, char * rodsUser, char * newOwner) {
+int increaseUsage(char * filePath, char * bags, char * newOwner) {
 
     long long fileSize = getRodsFileSize(filePath);
     if (fileSize <= 0) return fileSize;
@@ -550,20 +549,20 @@ int increaseUsage(char * filePath, char * rodsUser, char * newOwner) {
     //-----------------------------------------
 
     char *avuOwner = concat(newOwner, usageSize);
-    long long userNewSize = fileSize + strtoll(getUserAVU(rodsUser, avuOwner), 0, 0);
+    long long userNewSize = fileSize + strtoll(getDirAVU(bags, avuOwner), 0, 0);
 
     char * tmpSize = lltostr(userNewSize);
-    int result = setAVU("-u", rodsUser, avuOwner, tmpSize);
+    int result = setAVU("-C", bags, avuOwner, tmpSize);
     delete[] avuOwner; delete[] tmpSize;
     if (result != 0) {
-        rodsLog(LOG_ERROR, "increaseUsage add %s got error %d [RODS user level]", rodsUser, result);
+        rodsLog(LOG_ERROR, "increaseUsage add %s got error %d [RODS user level]", bags, result);
 	return result;
     }
 
     //-----------------------------------------
 
     avuOwner = concat(newOwner, usageQuota);
-    long long maxSize = strtoll(getUserAVU(rodsUser, avuOwner), 0, 0);
+    long long maxSize = strtoll(getDirAVU(bags, avuOwner), 0, 0);
     if ((maxSize > 0) && (maxSize < userNewSize)) {
         dataObjInp_t dataObjInp;
         bzero (&dataObjInp, sizeof (dataObjInp));

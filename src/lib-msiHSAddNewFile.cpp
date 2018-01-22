@@ -63,7 +63,14 @@ int msiHSAddNewFile(msParam_t* _string_param,
         return 0;
     }
 
-    char *rodsUser = concat(strpart(newPath, "/", 4), concat("#", strpart(newPath, "/", 2)));
+//    char *rodsUser = concat(strpart(newPath, "/", 4), concat("#", strpart(newPath, "/", 2)));
+    char *tmp;
+    char *bags = concat("/", strpart(newPath, "/", 2));               tmp = bags;
+    bags = concat(bags, "/");                           delete[] tmp; tmp = bags;
+    bags = concat(bags, strpart(newPath, "/", 3));      delete[] tmp; tmp = bags;
+    bags = concat(bags, "/");                           delete[] tmp; tmp = bags;
+    bags = concat(bags, strpart(newPath, "/", 4));      delete[] tmp; tmp = bags;
+    bags = concat(bags, "/bags");                       delete[] tmp;
 
     char *quotaHolderAVU = parseMspForStr( _string_param3 );
     if( !quotaHolderAVU ) {
@@ -79,14 +86,19 @@ int msiHSAddNewFile(msParam_t* _string_param,
     bool haveQuotaHolder = getParentQuotaHolder(newPath, quotaHolderAVU, quotaHolder);
 
     if (haveQuotaHolder) {
-        result = increaseUsage(newPath, rodsUser, quotaHolder);
+        result = increaseUsage(newPath, bags, quotaHolder);
     }
     else {
         rodsLog(LOG_ERROR, "msiHSAddNewFile: file %s has no quotaHolder", newPath);
     }
 
     rodsClose();
-
+/*
+    delete[] bags;
+    delete[] rootDir;
+    delete[] newPath;
+    delete[] quotaHolderAVU;
+*/
     return result;
 }
 

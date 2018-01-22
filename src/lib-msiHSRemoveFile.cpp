@@ -63,7 +63,14 @@ int msiHSRemoveFile(msParam_t* _string_param,
         return 0;
     }
 
-    char *rodsUser = concat(strpart(filePath, "/", 4), concat("#", strpart(filePath, "/", 2)));
+//    char *rodsUser = concat(strpart(filePath, "/", 4), concat("#", strpart(filePath, "/", 2)));
+    char *tmp;
+    char *bags = concat("/", strpart(filePath, "/", 2));               tmp = bags;
+    bags = concat(bags, "/");                            delete[] tmp; tmp = bags;
+    bags = concat(bags, strpart(filePath, "/", 3));      delete[] tmp; tmp = bags;
+    bags = concat(bags, "/");                            delete[] tmp; tmp = bags;
+    bags = concat(bags, strpart(filePath, "/", 4));      delete[] tmp; tmp = bags;
+    bags = concat(bags, "/bags");                        delete[] tmp;
 
     char *quotaHolderAVU = parseMspForStr( _string_param3 );
     if( !quotaHolderAVU ) {
@@ -80,14 +87,19 @@ int msiHSRemoveFile(msParam_t* _string_param,
     bool haveQuotaHolder = getParentQuotaHolder(filePath, quotaHolderAVU, quotaHolder);
 
     if (haveQuotaHolder) {
-        result = decreaseUsage(filePath, rodsUser, quotaHolder);
+        result = decreaseUsage(filePath, bags, quotaHolder);
     }
     else {
         rodsLog(LOG_ERROR, "RemoveFile: file %s has no quota Holder", filePath);
     }
 
     rodsClose();
-
+/*
+    delete[] bags;
+    delete[] rootDir;
+    delete[] filePath;
+    delete[] quotaHolderAVU;
+*/
     return result;
 }
 

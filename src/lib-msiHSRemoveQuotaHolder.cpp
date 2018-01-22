@@ -63,7 +63,19 @@ int msiHSRemoveQuotaHolder(msParam_t* _string_param,
         return 0;
     }
 
-    char *rodsUser = concat(strpart(dirPath, "/", 4), concat("#", strpart(dirPath, "/", 2)));
+//    char *rodsUser = concat(strpart(dirPath, "/", 4), concat("#", strpart(dirPath, "/", 2)));
+    char *tmp;
+    char *bags = concat("/", strpart(dirPath, "/", 2));               tmp = bags;
+    bags = concat(bags, "/");                           delete[] tmp; tmp = bags;
+    bags = concat(bags, strpart(dirPath, "/", 3));      delete[] tmp; tmp = bags;
+    bags = concat(bags, "/");                           delete[] tmp; tmp = bags;
+    bags = concat(bags, strpart(dirPath, "/", 4));      delete[] tmp; tmp = bags;
+    bags = concat(bags, "/bags");                       delete[] tmp;
+
+    if (strcmp(dirPath, bags) == 0) {
+        rodsLog(LOG_NOTICE, "ignore bags");
+        return 0;
+    }
 
     char *oldOwner = parseMspForStr( _string_param3 );
     if(  !oldOwner ) {
@@ -76,14 +88,20 @@ int msiHSRemoveQuotaHolder(msParam_t* _string_param,
     char *avuOwner = concat(oldOwner, usageSize);
 
     long long dirUsage  = reScanDirUsage(dirPath);
-    long long userUsage = strtoll(getUserAVU(rodsUser, avuOwner), 0, 0) - dirUsage;
+    long long userUsage = strtoll(getDirAVU(bags, avuOwner), 0, 0) - dirUsage;
 
     if (userUsage < 0) userUsage = 0;
 
-    setAVU("-u", rodsUser, avuOwner, lltostr(userUsage));
+    setAVU("-C", bags, avuOwner, lltostr(userUsage));
 
     rodsClose();
-
+/*
+    delete[] bags;
+    delete[] avuOwner;
+    delete[] rootDir;
+    delete[] dirPath;
+    delete[] oldOwner;
+*/
     return 0;
 }
 

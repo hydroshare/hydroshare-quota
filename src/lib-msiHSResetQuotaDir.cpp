@@ -62,7 +62,14 @@ int msiHSResetQuotaDir(msParam_t* _string_param,
         return 0;
     }
 
-    char *rodsUser = concat(strpart(hydroshareRootPath, "/", 4), concat("#", strpart(hydroshareRootPath, "/", 2)));
+//    char *rodsUser = concat(strpart(hydroshareRootPath, "/", 4), concat("#", strpart(hydroshareRootPath, "/", 2)));
+    char *tmp;
+    char *bags = concat("/", strpart(hydroshareRootPath, "/", 2));               tmp = bags;
+    bags = concat(bags, "/");                                      delete[] tmp; tmp = bags;
+    bags = concat(bags, strpart(hydroshareRootPath, "/", 3));      delete[] tmp; tmp = bags;
+    bags = concat(bags, "/");                                      delete[] tmp; tmp = bags;
+    bags = concat(bags, strpart(hydroshareRootPath, "/", 4));      delete[] tmp; tmp = bags;
+    bags = concat(bags, "/bags");                                  delete[] tmp;
 
     char *quotaHolderAVU = parseMspForStr( _string_param3 );
     if( !quotaHolderAVU ) {
@@ -71,12 +78,21 @@ int msiHSResetQuotaDir(msParam_t* _string_param,
     }
 
     rodsOpen();
-
-    resetRootDir (hydroshareRootPath, rodsUser, quotaHolderAVU);
-    reScanRootDir(hydroshareRootPath, rodsUser, quotaHolderAVU);
+ 
+    rodsLog(LOG_NOTICE, "--- Reseting... set all values to 0.");
+    resetRootDir (hydroshareRootPath, bags, quotaHolderAVU);
+    rodsLog(LOG_NOTICE, "--- Done.");
+    rodsLog(LOG_NOTICE, "--- Recalculating values...");
+    reScanRootDir(hydroshareRootPath, bags, quotaHolderAVU);
+    rodsLog(LOG_NOTICE, "--- Done.");
 
     rodsClose();
-
+/*
+    delete[] bags;
+    delete[] rootDir;
+    delete[] hydroshareRootPath;
+    delete[] quotaHolderAVU;
+*/
     return 0;
 }
 

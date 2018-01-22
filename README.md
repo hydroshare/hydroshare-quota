@@ -1,3 +1,7 @@
+Jan 2018,
+
+Get/Set user's usage and user's quota on the "bags" Collection.
+
 Sep 2017,
 
 Update reScanRootDir
