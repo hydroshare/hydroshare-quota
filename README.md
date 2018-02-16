@@ -1,7 +1,7 @@
 Feb 2018,
 
 + Version 1.1.0
-+ Support imv
++ Support imv (commented out)
 + Support iRODS user home directory on Federated iRODS Server
 
 Jan 2018,
