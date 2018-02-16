@@ -9,7 +9,8 @@ A. Prerequisites
 
 B. From RPM file
 
-At this stage, you don’t have any rpm package to download. However, the steps below will guide you on how to make a rpm package from source code and then install it.
++ At this stage, you could download the RPM package from github.com to install.
++ However, the steps below will guide you on how to make a rpm package from source code and then install/configure it.
 
 C. From source code
 
