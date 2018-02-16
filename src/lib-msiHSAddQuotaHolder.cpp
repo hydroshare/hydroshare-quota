@@ -44,55 +44,36 @@
 int msiHSAddQuotaHolder(msParam_t* _string_param, 
                         msParam_t* _string_param2, 
                         msParam_t* _string_param3, 
+                        msParam_t* _string_param4, 
                         ruleExecInfo_t* _rei ) {
 
-    char *dirPath = parseMspForStr( _string_param );
-    if( !dirPath ) {
-        std::cout << "null FILE PATH" << std::endl;
-        return SYS_INVALID_INPUT_PARAM;
-    }
+    char *dirPath;
+    char *bagsPath;
+    char *newOwner;
+    char *serverRole;
+    char *irodsDir;
+    char *rootDir;
 
-    char *rootDir = parseMspForStr( _string_param2 );
-    if( !rootDir ) {
-        std::cout << "null rootDir" << std::endl;
-        return SYS_INVALID_INPUT_PARAM;
+    int result = paramCheck(_string_param, _string_param2, _string_param3, _string_param4, &dirPath, &bagsPath, &newOwner, &serverRole, &irodsDir, &rootDir);
+    if (result != 0) {
+        return result;
     }
 
     char *pos = strstr(dirPath, rootDir);
     if ((pos == NULL) || (pos != dirPath)) {
-        rodsLog(LOG_ERROR, "msiHSAddQuotaHolder: ignore %s: out of root: %s", dirPath, rootDir);
+        rodsLog(LOG_NOTICE, "msiHSAddQuotaHolder: ignore %s: out of root: %s", dirPath, rootDir);
         return 0;
-    }
-
-//    char *rodsUser = concat(strpart(dirPath, "/", 4), concat("#", strpart(dirPath, "/", 2)));
-    char *tmp;
-    char *bags = concat("/", strpart(dirPath, "/", 2));               tmp = bags;
-    bags = concat(bags, "/");                           delete[] tmp; tmp = bags;
-    bags = concat(bags, strpart(dirPath, "/", 3));      delete[] tmp; tmp = bags;
-    bags = concat(bags, "/");                           delete[] tmp; tmp = bags;
-    bags = concat(bags, strpart(dirPath, "/", 4));      delete[] tmp; tmp = bags;
-    bags = concat(bags, "/bags");                       delete[] tmp;
-
-    if (strcmp(dirPath, bags) == 0) {
-        rodsLog(LOG_NOTICE, "ignore bags");
-	return 0;
-    }
-
-    char *newOwner = parseMspForStr( _string_param3 );
-    if(  !newOwner ) {
-        std::cout << "null NEW OWNER" << std::endl;
-        return SYS_INVALID_INPUT_PARAM;
     }
 
     rodsOpen();
     char *avuOwner = concat(newOwner, usageSize);
 
     long long dirUsage  = reScanDirUsage(dirPath);
-    long long userUsage = strtoll(getDirAVU(bags, avuOwner), 0, 0) + dirUsage;
+    long long userUsage = strtoll(getDirAVU(bagsPath, avuOwner), 0, 0) + dirUsage;
 
     if (userUsage < 0) userUsage = 0;
 
-    setAVU("-C", bags, avuOwner, lltostr(userUsage));
+    setAVU("-C", bagsPath, avuOwner, lltostr(userUsage));
 
     rodsClose();
 /*
@@ -109,13 +90,15 @@ int msiHSAddQuotaHolder(msParam_t* _string_param,
 
 extern "C"
 irods::ms_table_entry* plugin_factory() {
-    irods::ms_table_entry* msvc = new irods::ms_table_entry(3);
+    irods::ms_table_entry* msvc = new irods::ms_table_entry(4);
     msvc->add_operation<
+        msParam_t*,
         msParam_t*,
         msParam_t*,
         msParam_t*,
         ruleExecInfo_t*>("msiHSAddQuotaHolder",
                          std::function<int(
+                             msParam_t*,
                              msParam_t*,
                              msParam_t*,
                              msParam_t*,

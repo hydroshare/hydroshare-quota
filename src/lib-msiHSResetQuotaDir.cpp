@@ -42,49 +42,29 @@
 
 int msiHSResetQuotaDir(msParam_t* _string_param, 
                        msParam_t* _string_param2, 
-                       msParam_t* _string_param3, ruleExecInfo_t* _rei ) {
+                       msParam_t* _string_param3, 
+                       msParam_t* _string_param4, 
+                       ruleExecInfo_t* _rei ) {
 
-    char *hydroshareRootPath = parseMspForStr( _string_param );
-    if( !hydroshareRootPath ) {
-        std::cout << "null PATH" << std::endl;
-        return SYS_INVALID_INPUT_PARAM;
-    }
+    char *tmpPath;
+    char *bagsPath;
+    char *quotaHolderAVU;
+    char *serverRole;
+    char *irodsDir;
+    char *rootDir;
 
-    char *rootDir = parseMspForStr( _string_param2 );
-    if( !rootDir ) {
-        std::cout << "null rootDir" << std::endl;
-        return SYS_INVALID_INPUT_PARAM;
-    }
-
-    char *pos = strstr(hydroshareRootPath, rootDir);
-    if ((pos == NULL) || (pos != hydroshareRootPath)) {
-        rodsLog(LOG_ERROR, "msiHSRemoteFile: ignore %s: out of root: %s", hydroshareRootPath, rootDir);
-        return 0;
-    }
-
-//    char *rodsUser = concat(strpart(hydroshareRootPath, "/", 4), concat("#", strpart(hydroshareRootPath, "/", 2)));
-    char *tmp;
-    char *bags = concat("/", strpart(hydroshareRootPath, "/", 2));               tmp = bags;
-    bags = concat(bags, "/");                                      delete[] tmp; tmp = bags;
-    bags = concat(bags, strpart(hydroshareRootPath, "/", 3));      delete[] tmp; tmp = bags;
-    bags = concat(bags, "/");                                      delete[] tmp; tmp = bags;
-    bags = concat(bags, strpart(hydroshareRootPath, "/", 4));      delete[] tmp; tmp = bags;
-    bags = concat(bags, "/bags");                                  delete[] tmp;
-
-    char *quotaHolderAVU = parseMspForStr( _string_param3 );
-    if( !quotaHolderAVU ) {
-        std::cout << "null quotaHolder AVU" << std::endl;
-        return SYS_INVALID_INPUT_PARAM;
+    int result = paramCheck(_string_param, _string_param2, _string_param3, _string_param4, &tmpPath, &bagsPath, &quotaHolderAVU, &serverRole, &irodsDir, &rootDir);
+    if (result != 0) {
+        return result;
     }
 
     rodsOpen();
  
     rodsLog(LOG_NOTICE, "--- Reseting... set all values to 0.");
-    resetRootDir (hydroshareRootPath, bags, quotaHolderAVU);
-    rodsLog(LOG_NOTICE, "--- Done.");
-    rodsLog(LOG_NOTICE, "--- Recalculating values...");
-    reScanRootDir(hydroshareRootPath, bags, quotaHolderAVU);
-    rodsLog(LOG_NOTICE, "--- Done.");
+    resetUsage(irodsDir, rootDir, bagsPath, quotaHolderAVU);
+    rodsLog(LOG_NOTICE, "--- Scanning HydroShare Root Dir... %s", rootDir);
+    reScanRootDir(rootDir, bagsPath, quotaHolderAVU);
+    reScanIRODSDir(irodsDir, rootDir, bagsPath, quotaHolderAVU);
 
     rodsClose();
 /*
@@ -100,13 +80,15 @@ int msiHSResetQuotaDir(msParam_t* _string_param,
 
 extern "C"
 irods::ms_table_entry* plugin_factory() {
-    irods::ms_table_entry* msvc = new irods::ms_table_entry(3);
+    irods::ms_table_entry* msvc = new irods::ms_table_entry(4);
     msvc->add_operation<
+        msParam_t*,
         msParam_t*,
         msParam_t*,
         msParam_t*,
         ruleExecInfo_t*>("msiHSResetQuotaDir",
                          std::function<int(
+                             msParam_t*,
                              msParam_t*,
                              msParam_t*,
                              msParam_t*,

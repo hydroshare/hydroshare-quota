@@ -43,54 +43,39 @@
 int msiHSRemoveFile(msParam_t* _string_param, 
                     msParam_t* _string_param2, 
                     msParam_t* _string_param3, 
+                    msParam_t* _string_param4, 
                     ruleExecInfo_t* _rei ) {
 
-    char *filePath = parseMspForStr( _string_param );
-    if( !filePath ) {
-        std::cout << "null filePath" << std::endl;
-        return SYS_INVALID_INPUT_PARAM;
+    char *filePath;
+    char *bagsPath;
+    char *quotaHolderAVU;
+    char *serverRole;
+    char *irodsDir;
+    char *rootDir;
+
+    int result = paramCheck(_string_param, _string_param2, _string_param3, _string_param4, &filePath, &bagsPath, &quotaHolderAVU, &serverRole, &irodsDir, &rootDir);
+    if (result != 0) {
+        return result;
     }
-
-    char *rootDir = parseMspForStr( _string_param2 );
-    if( !rootDir ) {
-        std::cout << "null rootDir" << std::endl;
-        return SYS_INVALID_INPUT_PARAM;
-    }
-
-    char *pos = strstr(filePath, rootDir);
-    if ((pos == NULL) || (pos != filePath)) {
-        rodsLog(LOG_ERROR, "msiHSRemoteFile: ignore %s: out of root: %s", filePath, rootDir);
-        return 0;
-    }
-
-//    char *rodsUser = concat(strpart(filePath, "/", 4), concat("#", strpart(filePath, "/", 2)));
-    char *tmp;
-    char *bags = concat("/", strpart(filePath, "/", 2));               tmp = bags;
-    bags = concat(bags, "/");                            delete[] tmp; tmp = bags;
-    bags = concat(bags, strpart(filePath, "/", 3));      delete[] tmp; tmp = bags;
-    bags = concat(bags, "/");                            delete[] tmp; tmp = bags;
-    bags = concat(bags, strpart(filePath, "/", 4));      delete[] tmp; tmp = bags;
-    bags = concat(bags, "/bags");                        delete[] tmp;
-
-    char *quotaHolderAVU = parseMspForStr( _string_param3 );
-    if( !quotaHolderAVU ) {
-        std::cout << "null quotaHolder AVU" << std::endl;
-        return SYS_INVALID_INPUT_PARAM;
-    }
-
-    int result = 0;
 
     char quotaHolder[MAX_NAME_LEN];
 
     rodsOpen();
 
-    bool haveQuotaHolder = getParentQuotaHolder(filePath, quotaHolderAVU, quotaHolder);
+    if (strstr(filePath, rootDir) == filePath) {
+        bool haveQuotaHolder = getParentQuotaHolder(filePath, quotaHolderAVU, quotaHolder);
 
-    if (haveQuotaHolder) {
-        result = decreaseUsage(filePath, bags, quotaHolder);
+        if (haveQuotaHolder) {
+            result = decreaseUsage(filePath, bagsPath, quotaHolder);
+        }
+        else {
+            rodsLog(LOG_ERROR, "msiHSRemoteFile: file %s has no quota Holder", filePath);
+        }
     }
     else {
-        rodsLog(LOG_ERROR, "RemoveFile: file %s has no quota Holder", filePath);
+        char *tmp = strpart(filePath, "/", 4);
+        strcpy(quotaHolder, tmp); delete[] tmp;
+        result = decreaseUsage(filePath, bagsPath, quotaHolder);
     }
 
     rodsClose();
@@ -107,13 +92,15 @@ int msiHSRemoveFile(msParam_t* _string_param,
 
 extern "C"
 irods::ms_table_entry* plugin_factory() {
-    irods::ms_table_entry* msvc = new irods::ms_table_entry(3);
+    irods::ms_table_entry* msvc = new irods::ms_table_entry(4);
     msvc->add_operation<
+        msParam_t*,
         msParam_t*,
         msParam_t*,
         msParam_t*,
         ruleExecInfo_t*>("msiHSRemoveFile",
                          std::function<int(
+                             msParam_t*,
                              msParam_t*,
                              msParam_t*,
                              msParam_t*,

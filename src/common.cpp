@@ -4,6 +4,8 @@ rodsEnv myEnv;
 
 char *EMPTY          = "   NULL   ";
 
+char *HSRole         = "HydroShare";
+
 char *usageSize      = "-usage";
 char *usageQuota     = "-quota";
 
@@ -17,16 +19,88 @@ long long getRodsFileSize(char *srcPath);
 char * getDirAVU( char *name, char *attrName);
 char * getUserAVU( char *name, char *attrName);
 
+char* strpart(const char* str, const char* delimit, int pos);
+
 int setAVU(char *objType, char *objName, char *attrName, char *attrValue);
 
 void _debug(char *str) {
-        std::cout << " __DEBUG__: " << str << std::endl;
+    rodsLog(LOG_DEBUG, str);
 }
 
 //---------------------------------------------------------
 void _debug(long long val) {
-        std::cout << " __DEBUG__: " << val << std::endl;
+    rodsLog(LOG_DEBUG, lltostr(val));
 }
+
+//---------------------------------------------------------
+int paramCheck(msParam_t* _string_param,
+               msParam_t* _string_param2,
+               msParam_t* _string_param3,
+               msParam_t* _string_param4,  
+               char **objPath,
+               char **bagsPath,
+               char **AVUvalue,
+               char **serverRole,
+               char **irodsDir,
+               char **rootDir) {
+
+    *objPath = parseMspForStr( _string_param );
+    if( !(*objPath) ) {
+        rodsLog(LOG_ERROR, "null Object PATH");
+        return SYS_INVALID_INPUT_PARAM;
+    }
+
+    *bagsPath = parseMspForStr( _string_param2 );
+    if( !(*bagsPath) ) {
+        rodsLog(LOG_ERROR, "null Bags PATH");
+        return SYS_INVALID_INPUT_PARAM;
+    }
+
+    *AVUvalue = parseMspForStr( _string_param3 );
+    if( !(*AVUvalue) ) {
+        rodsLog(LOG_ERROR, "null AVU");
+        return SYS_INVALID_INPUT_PARAM;
+    }
+
+    *serverRole = parseMspForStr( _string_param4 );
+    if( !(*serverRole) ) {
+        rodsLog(LOG_ERROR, "null Server Role");
+        return SYS_INVALID_INPUT_PARAM;
+    }
+
+    char *tmp;
+    *rootDir  = concat("/", strpart(*bagsPath, "/", 2));     
+    *rootDir  = concat(*rootDir, "/");                       
+    *rootDir  = concat(*rootDir, strpart(*bagsPath, "/", 3));  
+
+    *irodsDir = *rootDir;
+
+    *rootDir  = concat(*rootDir, "/");                              
+    *rootDir  = concat(*rootDir, strpart(*bagsPath, "/", 4));   
+
+    if (strcmp(*serverRole, HSRole) == 0) {
+        char *pos = strstr(*objPath, *rootDir);
+        if ((pos == NULL) || (pos != *objPath)) {
+            rodsLog(LOG_NOTICE, "msiHSAddNewFile: ignore %s: out of monitor directory: %s", *objPath, *rootDir);
+            return 1;
+        }
+    }
+    else {
+        char *pos = strstr(*objPath, *irodsDir);
+        if ((pos == NULL) || (pos != *objPath)) {
+            rodsLog(LOG_NOTICE, "msiHSAddNewFile: ignore %s: out of monitor directory: %s", *objPath, *irodsDir);
+            return 1;
+        }
+    }
+
+    if (strstr(*objPath, *bagsPath) == *objPath) {
+        rodsLog(LOG_NOTICE, "BAGS is ignored");
+        return 1;
+    }
+
+    return 0;
+}
+
 
 //---------------------------------------------------------
 long long reScanDirUsage(char * dirPath) {
@@ -56,7 +130,7 @@ long long reScanDirUsage(char * dirPath) {
 }
 
 //---------------------------------------------------------
-void resetRootDir(char * dirPath, char * bags, char * quotaHolderAVU) {
+void resetUsage(char * irodsDir, char * rootDir, char * bags, char * quotaHolderAVU) {
     long long dirSize = 0;
     int status;
     int queryFlags;
@@ -67,16 +141,26 @@ void resetRootDir(char * dirPath, char * bags, char * quotaHolderAVU) {
 
     char *emptySize = "0";
 
-    status = rclOpenCollection( conn, dirPath, queryFlags, &collHandle );
+    status = rclOpenCollection( conn, rootDir, queryFlags, &collHandle );
     while ( ( status = rclReadCollection( conn, &collHandle, &collEnt ) ) >= 0 ) {
         if ( collEnt.objType == COLL_OBJ_T ) {
             char *userName = getDirAVU(collEnt.collName, quotaHolderAVU);
-//	    std::cout << " __DEBUG__: " << collEnt.collName << ":" << userName << std::endl;
             if (strcmp(userName, EMPTY) != 0) {
                 char *avuUsage = concat(userName, usageSize);
                 setAVU("-C", bags, avuUsage, emptySize);
                 delete[] avuUsage; delete[] userName;
             }
+        }
+    }
+    rclCloseCollection( &collHandle );
+
+    status = rclOpenCollection( conn, irodsDir, queryFlags, &collHandle );
+    while ( ( status = rclReadCollection( conn, &collHandle, &collEnt ) ) >= 0 ) {
+        if ((collEnt.objType == COLL_OBJ_T) && (strcmp(collEnt.collName, rootDir) != 0)) {
+            char *userName = strpart(collEnt.collName, "/", 4);
+	    char *avuUsage = concat(userName, usageSize);
+            setAVU("-C", bags, avuUsage, emptySize);
+            delete[] avuUsage; delete[] userName;
         }
     }
     rclCloseCollection( &collHandle );
@@ -102,6 +186,30 @@ void reScanRootDir(char * dirPath, char * bags, char * quotaHolderAVU) {
                 setAVU("-C", bags, avuUsage, tmpSize);
                 delete[] avuUsage; delete[] userName; delete[] tmpSize;
             }
+        }
+    }
+    rclCloseCollection( &collHandle );
+}
+
+//---------------------------------------------------------
+void reScanIRODSDir(char *irodsDir, char *rootDir, char * bags, char * quotaHolderAVU) {
+    long long dirSize = 0;
+    int status;
+    int queryFlags;
+    collHandle_t collHandle;
+    collEnt_t collEnt;
+
+    queryFlags = DATA_QUERY_FIRST_FG;
+
+    status = rclOpenCollection( conn, irodsDir, queryFlags, &collHandle );
+    while ( ( status = rclReadCollection( conn, &collHandle, &collEnt ) ) >= 0 ) {
+        if ((collEnt.objType == COLL_OBJ_T) && (strcmp(collEnt.collName, rootDir) != 0)) {
+            rodsLog(LOG_NOTICE, "--- Scanning %s", collEnt.collName);
+            char *userName = strpart(collEnt.collName, "/", 4);
+	    char *avuUsage = concat(userName, usageSize);
+            char *tmpSize  = lltostr(strtoll(getDirAVU(bags, avuUsage), 0, 0) + reScanDirUsage(collEnt.collName));
+            setAVU("-C", bags, avuUsage, tmpSize);
+            delete[] avuUsage; delete[] userName; delete[] tmpSize;
         }
     }
     rclCloseCollection( &collHandle );

@@ -1,37 +1,57 @@
-Use the following steps for only CentOS 7.x and iRODS 4.2.x or later
+A. Prerequisites
 
-+ Use cmake on irods-externals-cmake package to run: cmake . (you should be installed other *-devel packages to finish this step)
++ This document is written only for CentOS systems (7.x 64bit). It may be used for other Linux systems such as Ubuntu, but there is no guarantee that it would function properly.
++ The quota system is only tested with iRODS server 4.2.x, it cannot run with the earlier versions,  but may work with later ones.
++ Follow this link https://packages.irods.org/ to install renci-irods repository before installing the quota system.
++ All irods-externals-* packages have to be installed.
++ The group “Development Tools” has to be installed.
++ The openssl-devel package has to be installed.
 
-+ Run: “make package”  to make hydroshare-quota-microservices.rpm package
+B. From RPM file
 
-+ rpm -Uvh hydroshare-quota-microservices.rpm
+At this stage, you don’t have any rpm package to download. However, the steps below will guide you on how to make a rpm package from source code and then install it.
 
-+ modify all values on /etc/irods/hydroshare.re to adapt with your server
+C. From source code
 
-+ edit /etc/irods/server_config.json then change:
++ git clone https://github.com/hydroshare/hydroshare-quota.git
++ cd hydroshare-quota
++ Modify the iRODS version in the line number 3 in the file: CMakeLists.txt to match with the version of the current iRODS server if needed. The current supported version is 4.2.2
++ use cmake on irods-externals-cmake package to run: cmake . 
+  it is probably in the /opt/irods-externals/cmake-<version>/bin directory
++ make package
++ rpm -Uvh hydroshare-quota-microservices*.rpm
++ Using irods account to run some iCommands to test… e.g. icd, ils… then check the newest log file in the directory: /var/lib/irods/log. 
+  If get errors are “copy permission”, we have to grant the write permission for irods user on /etc/irods directory:
+    - setfacl -m u:irods:rwx /etc/irods
+    - chmod 775 /etc/irods
++ See configuration document to modify the file /etc/irods/hydroshare.re
++ Edit the file /etc/irods/server_config.json then change
 
         "re_rulebase_set": [
-            "core"
+                "core"
         ],
 
-To 
+To
 
         "re_rulebase_set": [
-            "hydroshare,core"
+                "hydroshare,core"
         ],
 
-+ my msi(s) use rods account to work, you have to grant permission to this user in HydroShare Root Dir
-     ichmod  –r  –M  inherit  <HydroShare Root Dir>
-     ichmod  –r  –M  write   rods   <HydroShare Root Dir>
++ ichmod  –r  –M  inherit  <HydroShare Root Dir>
++ ichmod  –r  –M  own   rods   <HydroShare Root Dir>
 
-+ set “quotaUserName” AVU to the top level directories of HS users on <HydroShare Root Dir>
-     imeta  set -C <HydroShare Root Dir>/291823725653fea98273      quotaUserName      peter
-     ...
-     imeta  set -C <HydroShare Root Dir>/291823725653fea98273      quotaUserName      john
+The last two commands will help all MSI(s) run faster and safer. There is no need to implement the code to switch to admin privileges.
 
-+ set quota hard-limit on the iRODS user which defined on hydroshare.re
-     imeta  set -u <iRODS user>    “peter-quota”     25000000000      (20GB x 125% for peter on iRODS layer)
-     ...
-     imeta  set -u <iRODS user>    “john-quota”      0                (john is unlimited on iRODS layer)
++ imeta set -C <HydroShare Root Dir> resetQuotaDir 1
 
+This command will recalculate all user’s usage inside the HydroShare Root Dir then update the correct values to the “bags” Collection.
 
++ docker exec -u hydro-service -ti hydroshare python manage.py update_used_storage
+
+Run this command on the host server, it will sync all values from iRODS layer to Django data
+
++ Update the warning message on the Admin Site -> Theme -> Quota messages to be: 
+
+“Your quota for HydroShare resources is {allocated}{unit} in HydroShare zone. You currently have resources that consume {used}{unit}, {percent}% of your quota. Once your quota reaches 100% you will no longer be able to create new resources in HydroShare.”
+
++ Please contact me at phuongdm79@gmail.com if any problem.

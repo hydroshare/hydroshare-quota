@@ -35,61 +35,47 @@
 
 //---------------------------------------------------------
 
-#include <string>
+
 #include <libgen.h>
 
 //---------------------------------------------------------
 
 int msiHSAddNewFile(msParam_t* _string_param, 
                     msParam_t* _string_param2, 
-                    msParam_t* _string_param3, 
+                    msParam_t* _string_param3,
+                    msParam_t* _string_param4,
                     ruleExecInfo_t* _rei ) {
 
-    char *newPath = parseMspForStr( _string_param );
-    if( !newPath ) {
-        std::cout << "null PATH" << std::endl;
-        return SYS_INVALID_INPUT_PARAM;
-    }
+    char *newPath;
+    char *bagsPath;
+    char *quotaHolderAVU;
+    char *serverRole;
+    char *irodsDir;
+    char *rootDir;
 
-    char *rootDir = parseMspForStr( _string_param2 );
-    if( !rootDir ) {
-        std::cout << "null rootDir" << std::endl;
-        return SYS_INVALID_INPUT_PARAM;
-    }
-
-    char *pos = strstr(newPath, rootDir);
-    if ((pos == NULL) || (pos != newPath)) {
-        rodsLog(LOG_ERROR, "msiHSAddNewFile: ignore %s: out of root: %s", newPath, rootDir);
-        return 0;
-    }
-
-//    char *rodsUser = concat(strpart(newPath, "/", 4), concat("#", strpart(newPath, "/", 2)));
-    char *tmp;
-    char *bags = concat("/", strpart(newPath, "/", 2));               tmp = bags;
-    bags = concat(bags, "/");                           delete[] tmp; tmp = bags;
-    bags = concat(bags, strpart(newPath, "/", 3));      delete[] tmp; tmp = bags;
-    bags = concat(bags, "/");                           delete[] tmp; tmp = bags;
-    bags = concat(bags, strpart(newPath, "/", 4));      delete[] tmp; tmp = bags;
-    bags = concat(bags, "/bags");                       delete[] tmp;
-
-    char *quotaHolderAVU = parseMspForStr( _string_param3 );
-    if( !quotaHolderAVU ) {
-        std::cout << "null quotaHolder AVU" << std::endl;
-        return SYS_INVALID_INPUT_PARAM;
+    int result = paramCheck(_string_param, _string_param2, _string_param3, _string_param4, &newPath, &bagsPath, &quotaHolderAVU, &serverRole, &irodsDir, &rootDir);
+    if (result != 0) {
+	return result;
     }
 
     char quotaHolder[MAX_NAME_LEN];
 
     rodsOpen();
 
-    int result = 0;
-    bool haveQuotaHolder = getParentQuotaHolder(newPath, quotaHolderAVU, quotaHolder);
+    if (strstr(newPath, rootDir) == newPath) {
+        bool haveQuotaHolder = getParentQuotaHolder(newPath, quotaHolderAVU, quotaHolder);
 
-    if (haveQuotaHolder) {
-        result = increaseUsage(newPath, bags, quotaHolder);
+        if (haveQuotaHolder) {
+            result = increaseUsage(newPath, bagsPath, quotaHolder);
+        }
+        else {
+            rodsLog(LOG_ERROR, "msiHSAddNewFile: file %s has no quotaHolder", newPath);
+        }
     }
     else {
-        rodsLog(LOG_ERROR, "msiHSAddNewFile: file %s has no quotaHolder", newPath);
+        char *tmp = strpart(newPath, "/", 4);
+        strcpy(quotaHolder, tmp); delete[] tmp;
+        result = increaseUsage(newPath, bagsPath, quotaHolder);
     }
 
     rodsClose();
@@ -106,13 +92,15 @@ int msiHSAddNewFile(msParam_t* _string_param,
 
 extern "C"
 irods::ms_table_entry* plugin_factory() {
-    irods::ms_table_entry* msvc = new irods::ms_table_entry(3);
+    irods::ms_table_entry* msvc = new irods::ms_table_entry(4);
     msvc->add_operation<
+        msParam_t*,
         msParam_t*,
         msParam_t*,
         msParam_t*,
         ruleExecInfo_t*>("msiHSAddNewFile",
                          std::function<int(
+                             msParam_t*,
                              msParam_t*,
                              msParam_t*,
                              msParam_t*,
