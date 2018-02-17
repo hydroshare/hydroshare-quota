@@ -130,7 +130,7 @@ long long reScanDirUsage(char * dirPath) {
 }
 
 //---------------------------------------------------------
-void resetUsage(char * irodsDir, char * rootDir, char * bags, char * quotaHolderAVU) {
+void resetUsage(char * irodsDir, char * rootDir, char * serverRole, char * bags, char * quotaHolderAVU) {
     long long dirSize = 0;
     int status;
     int queryFlags;
@@ -153,6 +153,8 @@ void resetUsage(char * irodsDir, char * rootDir, char * bags, char * quotaHolder
         }
     }
     rclCloseCollection( &collHandle );
+
+    if (strcmp(serverRole, HSRole) == 0) return;
 
     status = rclOpenCollection( conn, irodsDir, queryFlags, &collHandle );
     while ( ( status = rclReadCollection( conn, &collHandle, &collEnt ) ) >= 0 ) {
@@ -192,12 +194,14 @@ void reScanRootDir(char * dirPath, char * bags, char * quotaHolderAVU) {
 }
 
 //---------------------------------------------------------
-void reScanIRODSDir(char *irodsDir, char *rootDir, char * bags, char * quotaHolderAVU) {
+void reScanIRODSDir(char *irodsDir, char *rootDir, char * serverRole, char * bags, char * quotaHolderAVU) {
     long long dirSize = 0;
     int status;
     int queryFlags;
     collHandle_t collHandle;
     collEnt_t collEnt;
+
+    if (strcmp(serverRole, HSRole) == 0) return;
 
     queryFlags = DATA_QUERY_FIRST_FG;
 

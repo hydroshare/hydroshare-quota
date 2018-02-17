@@ -61,10 +61,10 @@ int msiHSResetQuotaDir(msParam_t* _string_param,
     rodsOpen();
  
     rodsLog(LOG_NOTICE, "--- Reseting... set all values to 0.");
-    resetUsage(irodsDir, rootDir, bagsPath, quotaHolderAVU);
+    resetUsage(irodsDir, rootDir, serverRole, bagsPath, quotaHolderAVU);
     rodsLog(LOG_NOTICE, "--- Scanning HydroShare Root Dir... %s", rootDir);
     reScanRootDir(rootDir, bagsPath, quotaHolderAVU);
-    reScanIRODSDir(irodsDir, rootDir, bagsPath, quotaHolderAVU);
+    reScanIRODSDir(irodsDir, rootDir, serverRole, bagsPath, quotaHolderAVU);
 
     rodsClose();
 /*
