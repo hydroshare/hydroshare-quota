@@ -22,6 +22,7 @@ char * getUserAVU( char *name, char *attrName);
 char* strpart(const char* str, const char* delimit, int pos);
 
 int setAVU(char *objType, char *objName, char *attrName, char *attrValue);
+int removeAVU(char *objType, char *objName, char *attrName, char *attrValue);
 
 void _debug(char *str) {
     rodsLog(LOG_DEBUG, str);
@@ -131,41 +132,60 @@ long long reScanDirUsage(char * dirPath) {
 
 //---------------------------------------------------------
 void resetUsage(char * irodsDir, char * rootDir, char * serverRole, char * bags, char * quotaHolderAVU) {
-    long long dirSize = 0;
-    int status;
-    int queryFlags;
-    collHandle_t collHandle;
-    collEnt_t collEnt;
+    genQueryOut_t *genQueryOut = NULL;
+    int i1a[10];
+    int i1b[10];
+    int i2a[10];
+    char *condVal[10];
 
-    queryFlags = DATA_QUERY_FIRST_FG;
+    char fullName[MAX_NAME_LEN];
+    int  status;
 
-    char *emptySize = "0";
+    genQueryInp_t genQueryInp;
+    memset( &genQueryInp, 0, sizeof( genQueryInp ) );
 
-    status = rclOpenCollection( conn, rootDir, queryFlags, &collHandle );
-    while ( ( status = rclReadCollection( conn, &collHandle, &collEnt ) ) >= 0 ) {
-        if ( collEnt.objType == COLL_OBJ_T ) {
-            char *userName = getDirAVU(collEnt.collName, quotaHolderAVU);
-            if (strcmp(userName, EMPTY) != 0) {
-                char *avuUsage = concat(userName, usageSize);
-                setAVU("-C", bags, avuUsage, emptySize);
-                delete[] avuUsage; delete[] userName;
-            }
-        }
+    char *columnNames[] = {"attribute", "value", "units"};
+
+    i1a[0] = COL_META_COLL_ATTR_NAME;
+    i1b[0] = 0; /* currently unused */
+    i1a[1] = COL_META_COLL_ATTR_VALUE;
+    i1b[1] = 0;
+    i1a[2] = COL_META_COLL_ATTR_UNITS;
+    i1b[2] = 0;
+    genQueryInp.selectInp.inx = i1a;
+    genQueryInp.selectInp.value = i1b;
+    genQueryInp.selectInp.len = 3;
+
+    strncpy( fullName, bags, MAX_NAME_LEN );
+
+    i2a[0] = COL_COLL_NAME;
+    std::string v1;
+    v1 =  "='";
+    v1 += fullName;
+    v1 += "'";
+
+    condVal[0] = const_cast<char*>( v1.c_str() );
+
+    genQueryInp.sqlCondInp.inx = i2a;
+    genQueryInp.sqlCondInp.value = condVal;
+    genQueryInp.sqlCondInp.len = 1;
+
+    genQueryInp.maxRows = 10;
+    genQueryInp.continueInx = 0;
+    genQueryInp.condInput.len = 0;
+
+    rodsLog(LOG_NOTICE, "Remove all AVUs in bags: %s", fullName);
+
+    status = rcGenQuery( conn, &genQueryInp, &genQueryOut );
+    if ( status == CAT_NO_ROWS_FOUND ) {
+        return;
     }
-    rclCloseCollection( &collHandle );
-
-    if (strcmp(serverRole, HSRole) == 0) return;
-
-    status = rclOpenCollection( conn, irodsDir, queryFlags, &collHandle );
-    while ( ( status = rclReadCollection( conn, &collHandle, &collEnt ) ) >= 0 ) {
-        if ((collEnt.objType == COLL_OBJ_T) && (strcmp(collEnt.collName, rootDir) != 0)) {
-            char *userName = strpart(collEnt.collName, "/", 4);
-	    char *avuUsage = concat(userName, usageSize);
-            setAVU("-C", bags, avuUsage, emptySize);
-            delete[] avuUsage; delete[] userName;
-        }
+    while ( status == 0 ) {
+        removeAVU("-C", bags, genQueryOut->sqlResult[0].value, genQueryOut->sqlResult[1].value);
+        rodsLog(LOG_NOTICE, genQueryOut->sqlResult[0].value);
+        status = rcGenQuery( conn, &genQueryInp, &genQueryOut );
     }
-    rclCloseCollection( &collHandle );
+    return;
 }
 
 //---------------------------------------------------------
@@ -186,7 +206,9 @@ void reScanRootDir(char * dirPath, char * bags, char * quotaHolderAVU) {
                 char *avuUsage = concat(userName, usageSize);
                 char *tmpSize  = lltostr(strtoll(getDirAVU(bags, avuUsage), 0, 0) + reScanDirUsage(collEnt.collName));
                 setAVU("-C", bags, avuUsage, tmpSize);
-                delete[] avuUsage; delete[] userName; delete[] tmpSize;
+                char * resource = strpart(collEnt.collName, "/", 5);
+                rodsLog(LOG_NOTICE, "%s: %s, %s", resource, userName, tmpSize);
+                delete[] avuUsage; delete[] userName; delete[] tmpSize; delete[] resource;
             }
         }
     }
@@ -208,11 +230,11 @@ void reScanIRODSDir(char *irodsDir, char *rootDir, char * serverRole, char * bag
     status = rclOpenCollection( conn, irodsDir, queryFlags, &collHandle );
     while ( ( status = rclReadCollection( conn, &collHandle, &collEnt ) ) >= 0 ) {
         if ((collEnt.objType == COLL_OBJ_T) && (strcmp(collEnt.collName, rootDir) != 0)) {
-            rodsLog(LOG_NOTICE, "--- Scanning %s", collEnt.collName);
             char *userName = strpart(collEnt.collName, "/", 4);
 	    char *avuUsage = concat(userName, usageSize);
             char *tmpSize  = lltostr(strtoll(getDirAVU(bags, avuUsage), 0, 0) + reScanDirUsage(collEnt.collName));
             setAVU("-C", bags, avuUsage, tmpSize);
+            rodsLog(LOG_NOTICE, "--- %s: %s, %s", collEnt.collName, userName, tmpSize);
             delete[] avuUsage; delete[] userName; delete[] tmpSize;
         }
     }
