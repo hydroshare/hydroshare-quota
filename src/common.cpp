@@ -1,3 +1,4 @@
+#include <unistd.h>
 
 rcComm_t *conn;
 rodsEnv myEnv;
@@ -180,8 +181,11 @@ void resetUsage(char * irodsDir, char * rootDir, char * serverRole, char * bags,
     if ( status == CAT_NO_ROWS_FOUND ) {
         return;
     }
+    unsigned int microseconds = 1000;
     while ( status == 0 ) {
         removeAVU("-C", bags, genQueryOut->sqlResult[0].value, genQueryOut->sqlResult[1].value);
+        usleep(microseconds);
+//        setAVU("-C", bags, genQueryOut->sqlResult[0].value, "0");
         rodsLog(LOG_NOTICE, genQueryOut->sqlResult[0].value);
         status = rcGenQuery( conn, &genQueryInp, &genQueryOut );
     }
