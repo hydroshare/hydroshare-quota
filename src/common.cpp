@@ -1,5 +1,3 @@
-#include <unistd.h>
-
 rcComm_t *conn;
 rodsEnv myEnv;
 
@@ -151,11 +149,10 @@ void resetUsage(char * irodsDir, char * rootDir, char * serverRole, char * bags,
     i1b[0] = 0; /* currently unused */
     i1a[1] = COL_META_COLL_ATTR_VALUE;
     i1b[1] = 0;
-    i1a[2] = COL_META_COLL_ATTR_UNITS;
-    i1b[2] = 0;
+
     genQueryInp.selectInp.inx = i1a;
     genQueryInp.selectInp.value = i1b;
-    genQueryInp.selectInp.len = 3;
+    genQueryInp.selectInp.len = 2;
 
     strncpy( fullName, bags, MAX_NAME_LEN );
 
@@ -171,22 +168,20 @@ void resetUsage(char * irodsDir, char * rootDir, char * serverRole, char * bags,
     genQueryInp.sqlCondInp.value = condVal;
     genQueryInp.sqlCondInp.len = 1;
 
-    genQueryInp.maxRows = 10;
+    genQueryInp.maxRows = 1;
     genQueryInp.continueInx = 0;
     genQueryInp.condInput.len = 0;
 
-    rodsLog(LOG_NOTICE, "Remove all AVUs in bags: %s", fullName);
+    rodsLog(LOG_NOTICE, "Reset all AVUs in bags to be '0': %s", fullName);
 
     status = rcGenQuery( conn, &genQueryInp, &genQueryOut );
     if ( status == CAT_NO_ROWS_FOUND ) {
         return;
     }
-    unsigned int microseconds = 1000;
-    while ( status == 0 ) {
-        removeAVU("-C", bags, genQueryOut->sqlResult[0].value, genQueryOut->sqlResult[1].value);
-        usleep(microseconds);
-//        setAVU("-C", bags, genQueryOut->sqlResult[0].value, "0");
+    while ( (status == 0) && (genQueryOut->continueInx > 0) ) {
+        setAVU("-C", bags, genQueryOut->sqlResult[0].value, "0");
         rodsLog(LOG_NOTICE, genQueryOut->sqlResult[0].value);
+        genQueryInp.continueInx = genQueryOut->continueInx;
         status = rcGenQuery( conn, &genQueryInp, &genQueryOut );
     }
     return;
