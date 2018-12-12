@@ -54,7 +54,6 @@ void callRestAPI(char * user, char *pass, char *url) {
     }
 
     // Remember to call the appropriate "free" functions.
-    curl_slist_free_all(headers);
     curl_easy_cleanup(curl);
     curl_global_cleanup();
   }
