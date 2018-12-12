@@ -14,23 +14,23 @@
 
 # catch "irm" command
 acDataDeletePolicy () {
-    msiHSRemoveFile($objPath, "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated"); 
+    msiHSRemoveFile($objPath, "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated", "irods", "irods1234", "https://park.hydroshare.org/hsapi/_internal/update_quota_usage/"); 
 }
 
 # catch "icp" command
 acPostProcForCopy () {
-    msiHSAddNewFile($objPath, "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated"); 
+    msiHSAddNewFile($objPath, "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated", "irods", "irods1234", "https://park.hydroshare.org/hsapi/_internal/update_quota_usage/"); 
 }
 
 # catch "imv" command 
 #acPostProcForObjRename (*sourceObject, *destObject) {
-#    msiHSRemoveFile(*sourceObject, "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated");
-#    msiHSAddNewFile(*destObject,   "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated");
+#    msiHSRemoveFile(*sourceObject, "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated", "irods", "irods1234", "https://park.hydroshare.org/hsapi/_internal/update_quota_usage/");
+#    msiHSAddNewFile(*destObject,   "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated", "irods", "irods1234", "https://park.hydroshare.org/hsapi/_internal/update_quota_usage/");
 #}
 
 # catch "iput" command
 acPostProcForPut () {
-    msiHSAddNewFile($objPath, "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated"); 
+    msiHSAddNewFile($objPath, "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated", "irods", "irods1234", "https://park.hydroshare.org/hsapi/_internal/update_quota_usage/"); 
 }
 
 # catch "imeta" command if any new "quotaUserName" or "resetQuotaDir" are set
@@ -38,14 +38,14 @@ acPostProcForModifyAVUMetadata (*cmd, *objType, *objPath, *avuName, *avuValue, *
     # set a new quotaHolder to a Collection: will affect to all COLL inside HydroShare Root Dir
     if (((*cmd == "set") || (*cmd == "add")) && (*objType == "-C") && (*avuName == "quotaUserName"))
     then {
-        msiHSAddQuotaHolder(*objPath, "/hydroshareZone/home/cuahsiDataProxy/bags", *avuValue, "Federated");
+        msiHSAddQuotaHolder(*objPath, "/hydroshareZone/home/cuahsiDataProxy/bags", *avuValue, "Federated", "irods", "irods1234", "https://park.hydroshare.org/hsapi/_internal/update_quota_usage/");
     }
 
     # could be set in anywhere, in any object. 
     # micro-services will scan from the HydroShare Root Dir or the iRODS home directory depend on the last parameter is "HydroShare" or other value.
     if (((*cmd == "set")  || (*cmd == "add")) && (*objType == "-C") && (*avuName == "resetQuotaDir"))
     then {
-        msiHSResetQuotaDir(*objPath, "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated");
+        msiHSResetQuotaDir(*objPath, "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated", "irods", "irods1234", "https://park.hydroshare.org/hsapi/_internal/update_quota_usage/");
     }
 
 }
@@ -54,7 +54,7 @@ acPostProcForModifyAVUMetadata (*cmd, *objType, *objPath, *avuName, *avuValue, *
 acPreProcForModifyAVUMetadata (*cmd, *objType, *objPath, *avuName, *avuValue, *avuUnit) {
     if ((*cmd == "rm") && (*objType == "-C") && (*avuName == "quotaUserName"))
     then {
-        msiHSRemoveQuotaHolder(*objPath, "/hydroshareZone/home/cuahsiDataProxy/bags", *avuValue, "Federated");
+        msiHSRemoveQuotaHolder(*objPath, "/hydroshareZone/home/cuahsiDataProxy/bags", *avuValue, "Federated", "irods", "irods1234", "https://park.hydroshare.org/hsapi/_internal/update_quota_usage/");
     }
 }
 

@@ -33,16 +33,78 @@ void _debug(long long val) {
 }
 
 //---------------------------------------------------------
+struct MemoryStruct {
+  char *memory;
+  size_t size;
+};
+
+static size_t WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *context) {
+  size_t bytec = size * nmemb;
+  struct MemoryStruct *mem = (struct MemoryStruct *)context;
+  mem->memory = (char *)realloc(mem->memory, mem->size + bytec + 1);
+  if(mem->memory == NULL) {
+    printf("not enough memory (realloc returned NULL)\n");
+    return 0;
+  }
+  memcpy(&(mem->memory[mem->size]), ptr, bytec);
+  mem->size += bytec;
+  mem->memory[mem->size] = 0;
+  return nmemb;
+}
+
+void callRestAPI(char * user, char *pass, char *url) {
+  CURL *curl;
+  CURLcode res;
+  struct MemoryStruct chunk;
+  chunk.memory = (char *)malloc(1);
+  chunk.size = 0;
+  chunk.memory[chunk.size] = 0;
+  curl_global_init(CURL_GLOBAL_ALL);
+  curl = curl_easy_init();
+  if(curl) {
+    curl_easy_setopt(curl, CURLOPT_URL, url);
+    curl_easy_setopt(curl, CURLOPT_HTTPAUTH, (long)CURLAUTH_BASIC);
+    curl_easy_setopt(curl, CURLOPT_USERNAME, "user");
+    curl_easy_setopt(curl, CURLOPT_PASSWORD, "password");
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
+    // The output from the example URL is easier to read as plain text.
+    struct curl_slist *headers = NULL;
+    headers = curl_slist_append(headers, "Accept: text/plain");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    // Make the example URL work even if your CA bundle is missing.
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+    res = curl_easy_perform(curl);
+    if(res != CURLE_OK) {
+    	rodsLog(LOG_ERROR, "curl_easy_perform() failed: %s", curl_easy_strerror(res));
+    } else {
+        rodsLog(LOG_NOTICE, "%s",chunk.memory);
+    }
+    // Remember to call the appropriate "free" functions.
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+    free(chunk.memory);
+    curl_global_cleanup();
+  }
+}
+
+//---------------------------------------------------------
 int paramCheck(msParam_t* _string_param,
                msParam_t* _string_param2,
                msParam_t* _string_param3,
                msParam_t* _string_param4,  
+               msParam_t* _string_param5,
+               msParam_t* _string_param6,
+               msParam_t* _string_param7,
                char **objPath,
                char **bagsPath,
                char **AVUvalue,
                char **serverRole,
                char **irodsDir,
-               char **rootDir) {
+               char **rootDir,
+               char **user,
+               char **pass,
+               char **url) {
 
     *objPath = parseMspForStr( _string_param );
     if( !(*objPath) ) {
@@ -68,6 +130,24 @@ int paramCheck(msParam_t* _string_param,
         return SYS_INVALID_INPUT_PARAM;
     }
 
+    *user = parseMspForStr( _string_param5 );
+    if( !(*user) ) {
+        rodsLog(LOG_ERROR, "null REST API user");
+        return SYS_INVALID_INPUT_PARAM;
+    }
+
+    *pass = parseMspForStr( _string_param6 );
+    if( !(*pass) ) {
+        rodsLog(LOG_ERROR, "null REST API pass");
+        return SYS_INVALID_INPUT_PARAM;
+    }
+
+    *url = parseMspForStr( _string_param7 );
+    if( !(*url) ) {
+        rodsLog(LOG_ERROR, "null REST API url");
+        return SYS_INVALID_INPUT_PARAM;
+    }
+
     char *tmp;
     *rootDir  = concat("/", strpart(*bagsPath, "/", 2));     
     *rootDir  = concat(*rootDir, "/");                       
@@ -81,14 +161,14 @@ int paramCheck(msParam_t* _string_param,
     if (strcmp(*serverRole, HSRole) == 0) {
         char *pos = strstr(*objPath, *rootDir);
         if ((pos == NULL) || (pos != *objPath)) {
-            rodsLog(LOG_NOTICE, "msiHSAddNewFile: ignore %s: out of monitor directory: %s", *objPath, *rootDir);
+            rodsLog(LOG_NOTICE, "quota msi ignore %s: out of monitor directory: %s", *objPath, *rootDir);
             return 1;
         }
     }
     else {
         char *pos = strstr(*objPath, *irodsDir);
         if ((pos == NULL) || (pos != *objPath)) {
-            rodsLog(LOG_NOTICE, "msiHSAddNewFile: ignore %s: out of monitor directory: %s", *objPath, *irodsDir);
+            rodsLog(LOG_NOTICE, "quota msi ignore %s: out of monitor directory: %s", *objPath, *irodsDir);
             return 1;
         }
     }
@@ -100,7 +180,6 @@ int paramCheck(msParam_t* _string_param,
 
     return 0;
 }
-
 
 //---------------------------------------------------------
 long long reScanDirUsage(char * dirPath) {
@@ -188,7 +267,7 @@ void resetUsage(char * irodsDir, char * rootDir, char * serverRole, char * bags,
 }
 
 //---------------------------------------------------------
-void reScanRootDir(char * dirPath, char * bags, char * quotaHolderAVU) {
+void reScanRootDir(char * dirPath, char * bags, char * quotaHolderAVU, char *user, char *pass, char *url) {
     long long dirSize = 0;
     int status;
     int queryFlags;
@@ -205,6 +284,7 @@ void reScanRootDir(char * dirPath, char * bags, char * quotaHolderAVU) {
                 char *avuUsage = concat(userName, usageSize);
                 char *tmpSize  = lltostr(strtoll(getDirAVU(bags, avuUsage), 0, 0) + reScanDirUsage(collEnt.collName));
                 setAVU("-C", bags, avuUsage, tmpSize);
+                callRestAPI(user, pass, concat(url, userName));
                 char * resource = strpart(collEnt.collName, "/", 5);
                 rodsLog(LOG_NOTICE, "%s: %s, %s", resource, userName, tmpSize);
                 delete[] avuUsage; delete[] userName; delete[] tmpSize; delete[] resource;
@@ -215,7 +295,7 @@ void reScanRootDir(char * dirPath, char * bags, char * quotaHolderAVU) {
 }
 
 //---------------------------------------------------------
-void reScanIRODSDir(char *irodsDir, char *rootDir, char * serverRole, char * bags, char * quotaHolderAVU) {
+void reScanIRODSDir(char *irodsDir, char *rootDir, char * serverRole, char * bags, char * quotaHolderAVU, char *user, char *pass, char *url) {
     long long dirSize = 0;
     int status;
     int queryFlags;
@@ -233,6 +313,7 @@ void reScanIRODSDir(char *irodsDir, char *rootDir, char * serverRole, char * bag
 	    char *avuUsage = concat(userName, usageSize);
             char *tmpSize  = lltostr(strtoll(getDirAVU(bags, avuUsage), 0, 0) + reScanDirUsage(collEnt.collName));
             setAVU("-C", bags, avuUsage, tmpSize);
+            callRestAPI(user, pass, concat(url, userName));
             rodsLog(LOG_NOTICE, "--- %s: %s, %s", collEnt.collName, userName, tmpSize);
             delete[] avuUsage; delete[] userName; delete[] tmpSize;
         }

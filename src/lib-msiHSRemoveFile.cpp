@@ -16,6 +16,7 @@
 #include "irodsntutil.hpp"
 #endif
 
+#include <curl/curl.h>
 #include "apiHandler.hpp"
 #include "irods_plugin_base.hpp"
 #include "irods_re_plugin.hpp"
@@ -44,6 +45,9 @@ int msiHSRemoveFile(msParam_t* _string_param,
                     msParam_t* _string_param2, 
                     msParam_t* _string_param3, 
                     msParam_t* _string_param4, 
+                    msParam_t* _string_param5,
+                    msParam_t* _string_param6,
+                    msParam_t* _string_param7,
                     ruleExecInfo_t* _rei ) {
 
     char *filePath;
@@ -52,8 +56,19 @@ int msiHSRemoveFile(msParam_t* _string_param,
     char *serverRole;
     char *irodsDir;
     char *rootDir;
+    char *user;
+    char *pass;
+    char *url;
 
-    int result = paramCheck(_string_param, _string_param2, _string_param3, _string_param4, &filePath, &bagsPath, &quotaHolderAVU, &serverRole, &irodsDir, &rootDir);
+    int result = paramCheck(_string_param,
+                            _string_param2,
+                            _string_param3,
+                            _string_param4,
+                            _string_param5,
+                            _string_param6,
+                            _string_param7,
+                            &filePath, &bagsPath, &quotaHolderAVU, &serverRole, &irodsDir, &rootDir, &user, &pass, &url);
+
     if (result != 0) {
         return result;
     }
@@ -67,6 +82,7 @@ int msiHSRemoveFile(msParam_t* _string_param,
 
         if (haveQuotaHolder) {
             result = decreaseUsage(filePath, bagsPath, quotaHolder);
+            callRestAPI(user, pass, concat(url, quotaHolder));
         }
         else {
             rodsLog(LOG_ERROR, "msiHSRemoteFile: file %s has no quota Holder", filePath);
@@ -76,6 +92,7 @@ int msiHSRemoveFile(msParam_t* _string_param,
         char *tmp = strpart(filePath, "/", 4);
         strcpy(quotaHolder, tmp); delete[] tmp;
         result = decreaseUsage(filePath, bagsPath, quotaHolder);
+        callRestAPI(user, pass, concat(url, quotaHolder));
     }
 
     rodsClose();
@@ -98,8 +115,14 @@ irods::ms_table_entry* plugin_factory() {
         msParam_t*,
         msParam_t*,
         msParam_t*,
+        msParam_t*,
+        msParam_t*,
+        msParam_t*,
         ruleExecInfo_t*>("msiHSRemoveFile",
                          std::function<int(
+                             msParam_t*,
+                             msParam_t*,
+                             msParam_t*,
                              msParam_t*,
                              msParam_t*,
                              msParam_t*,
