@@ -1,3 +1,9 @@
+Dec 2018,
+
++ Version 1.2.0
++ Support HydroShare REST API to send quota update message to HydroShare core
++ Update INSTALL document
+
 Feb 2018,
 
 + Version 1.1.0
@@ -17,5 +23,6 @@ Aug 2017,
 
 + Version 1.0.0
 
--Phuong-
+-Phuong Doan-
+phuongdm79@gmail.com
 

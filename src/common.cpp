@@ -33,57 +33,29 @@ void _debug(long long val) {
 }
 
 //---------------------------------------------------------
-struct MemoryStruct {
-  char *memory;
-  size_t size;
-};
-
-static size_t WriteMemoryCallback(void *ptr, size_t size, size_t nmemb, void *context) {
-  size_t bytec = size * nmemb;
-  struct MemoryStruct *mem = (struct MemoryStruct *)context;
-  mem->memory = (char *)realloc(mem->memory, mem->size + bytec + 1);
-  if(mem->memory == NULL) {
-    printf("not enough memory (realloc returned NULL)\n");
-    return 0;
-  }
-  memcpy(&(mem->memory[mem->size]), ptr, bytec);
-  mem->size += bytec;
-  mem->memory[mem->size] = 0;
-  return nmemb;
-}
-
 void callRestAPI(char * user, char *pass, char *url) {
   CURL *curl;
   CURLcode res;
-  struct MemoryStruct chunk;
-  chunk.memory = (char *)malloc(1);
-  chunk.size = 0;
-  chunk.memory[chunk.size] = 0;
   curl_global_init(CURL_GLOBAL_ALL);
   curl = curl_easy_init();
   if(curl) {
     curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_HTTPAUTH, (long)CURLAUTH_BASIC);
-    curl_easy_setopt(curl, CURLOPT_USERNAME, "user");
-    curl_easy_setopt(curl, CURLOPT_PASSWORD, "password");
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
-    // The output from the example URL is easier to read as plain text.
-    struct curl_slist *headers = NULL;
-    headers = curl_slist_append(headers, "Accept: text/plain");
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    // Make the example URL work even if your CA bundle is missing.
+    curl_easy_setopt(curl, CURLOPT_POST, 1L);
+    curl_easy_setopt(curl, CURLOPT_USERNAME, user);
+    curl_easy_setopt(curl, CURLOPT_PASSWORD, pass);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+
     res = curl_easy_perform(curl);
     if(res != CURLE_OK) {
     	rodsLog(LOG_ERROR, "curl_easy_perform() failed: %s", curl_easy_strerror(res));
     } else {
-        rodsLog(LOG_NOTICE, "%s",chunk.memory);
+        rodsLog(LOG_NOTICE, "Updated quota usage for %s", user);
     }
+
     // Remember to call the appropriate "free" functions.
     curl_slist_free_all(headers);
     curl_easy_cleanup(curl);
-    free(chunk.memory);
     curl_global_cleanup();
   }
 }
