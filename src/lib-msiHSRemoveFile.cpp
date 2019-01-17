@@ -82,7 +82,7 @@ int msiHSRemoveFile(msParam_t* _string_param,
 
         if (haveQuotaHolder) {
             result = decreaseUsage(filePath, bagsPath, quotaHolder);
-            callRestAPI(user, pass, concat(url, quotaHolder));
+            callRestAPI(user, pass, concat(concat(concat(concat(concat(concat(concat("https://", user), ":"), pass), "@"), url), quotaHolder), "/"));
         }
         else {
             rodsLog(LOG_ERROR, "msiHSRemoteFile: file %s has no quota Holder", filePath);
@@ -92,7 +92,7 @@ int msiHSRemoveFile(msParam_t* _string_param,
         char *tmp = strpart(filePath, "/", 4);
         strcpy(quotaHolder, tmp); delete[] tmp;
         result = decreaseUsage(filePath, bagsPath, quotaHolder);
-        callRestAPI(user, pass, concat(url, quotaHolder));
+	callRestAPI(user, pass, concat(concat(concat(concat(concat(concat(concat("https://", user), ":"), pass), "@"), url), quotaHolder), "/"));
     }
 
     rodsClose();
@@ -109,7 +109,7 @@ int msiHSRemoveFile(msParam_t* _string_param,
 
 extern "C"
 irods::ms_table_entry* plugin_factory() {
-    irods::ms_table_entry* msvc = new irods::ms_table_entry(4);
+    irods::ms_table_entry* msvc = new irods::ms_table_entry(7);
     msvc->add_operation<
         msParam_t*,
         msParam_t*,

@@ -36,26 +36,23 @@ void _debug(long long val) {
 void callRestAPI(char * user, char *pass, char *url) {
   CURL *curl;
   CURLcode res;
+
+  rodsLog(LOG_NOTICE, "url: %s\n", url);
+
   curl_global_init(CURL_GLOBAL_ALL);
   curl = curl_easy_init();
   if(curl) {
     curl_easy_setopt(curl, CURLOPT_URL, url);
-    curl_easy_setopt(curl, CURLOPT_HTTPAUTH, (long)CURLAUTH_BASIC);
-    curl_easy_setopt(curl, CURLOPT_POST, 1L);
-    curl_easy_setopt(curl, CURLOPT_USERNAME, user);
-    curl_easy_setopt(curl, CURLOPT_PASSWORD, pass);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "");
     res = curl_easy_perform(curl);
     if(res != CURLE_OK) {
     	rodsLog(LOG_ERROR, "curl_easy_perform() failed: %s", curl_easy_strerror(res));
-    } else {
-        rodsLog(LOG_NOTICE, "Updated quota usage for %s", user);
     }
-
-    // Remember to call the appropriate "free" functions.
     curl_easy_cleanup(curl);
     curl_global_cleanup();
+  }
+  else {
+    rodsLog(LOG_ERROR, "cannot init curl");
   }
 }
 
@@ -255,7 +252,7 @@ void reScanRootDir(char * dirPath, char * bags, char * quotaHolderAVU, char *use
                 char *avuUsage = concat(userName, usageSize);
                 char *tmpSize  = lltostr(strtoll(getDirAVU(bags, avuUsage), 0, 0) + reScanDirUsage(collEnt.collName));
                 setAVU("-C", bags, avuUsage, tmpSize);
-                callRestAPI(user, pass, concat(url, userName));
+		callRestAPI(user, pass, concat(concat(concat(concat(concat(concat(concat("https://", user), ":"), pass), "@"), url), userName), "/"));
                 char * resource = strpart(collEnt.collName, "/", 5);
                 rodsLog(LOG_NOTICE, "%s: %s, %s", resource, userName, tmpSize);
                 delete[] avuUsage; delete[] userName; delete[] tmpSize; delete[] resource;
@@ -284,7 +281,7 @@ void reScanIRODSDir(char *irodsDir, char *rootDir, char * serverRole, char * bag
 	    char *avuUsage = concat(userName, usageSize);
             char *tmpSize  = lltostr(strtoll(getDirAVU(bags, avuUsage), 0, 0) + reScanDirUsage(collEnt.collName));
             setAVU("-C", bags, avuUsage, tmpSize);
-            callRestAPI(user, pass, concat(url, userName));
+	    callRestAPI(user, pass, concat(concat(concat(concat(concat(concat(concat("https://", user), ":"), pass), "@"), url), userName), "/"));
             rodsLog(LOG_NOTICE, "--- %s: %s, %s", collEnt.collName, userName, tmpSize);
             delete[] avuUsage; delete[] userName; delete[] tmpSize;
         }

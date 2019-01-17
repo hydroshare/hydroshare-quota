@@ -1,3 +1,8 @@
+Jan 2019,
+
++ Fix bug for REST API
++ Change parameter format on  configuration file (hydroshare.re) 
+
 Dec 2018,
 
 + Version 1.2.0

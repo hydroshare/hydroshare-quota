@@ -89,7 +89,7 @@ int msiHSRemoveQuotaHolder(msParam_t* _string_param,
     if (userUsage < 0) userUsage = 0;
 
     setAVU("-C", bagsPath, avuOwner, lltostr(userUsage));
-    callRestAPI(user, pass, concat(url, oldOwner));
+    callRestAPI(user, pass, concat(concat(concat(concat(concat(concat(concat("https://", user), ":"), pass), "@"), url), oldOwner), "/"));
 
     rodsClose();
 /*
@@ -106,7 +106,7 @@ int msiHSRemoveQuotaHolder(msParam_t* _string_param,
 
 extern "C"
 irods::ms_table_entry* plugin_factory() {
-    irods::ms_table_entry* msvc = new irods::ms_table_entry(4);
+    irods::ms_table_entry* msvc = new irods::ms_table_entry(7);
     msvc->add_operation<
         msParam_t*,
         msParam_t*,
