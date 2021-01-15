@@ -1,3 +1,7 @@
+Jan 2021,
+
++ Migrate from jansson to nlohmann/json for irods-devel 4.2.8
+
 Jan 2019,
 
 + Fix bug for REST API
