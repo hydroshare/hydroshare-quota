@@ -30,7 +30,11 @@ acPostProcForCopy () {
 
 # catch "iput" command
 acPostProcForPut () {
-    msiHSAddNewFile($objPath, "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated", "hsuser", "dummy", "local.hs.org/hsapi/_internal/update_quota_usage/"); 
+    # work around to not call msiHSAddNewFile in the case of irepl ($oprType==6) and only call it in the case of iput ($oprType==1)
+    if ($oprType == 1)
+    then {
+        msiHSAddNewFile($objPath, "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated", "hsuser", "dummy", "local.hs.org/hsapi/_internal/update_quota_usage/"); 
+    }
 }
 
 # catch "imeta" command if any new "quotaUserName" or "resetQuotaDir" are set
