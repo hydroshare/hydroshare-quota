@@ -45,8 +45,14 @@ set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -stdlib=libc++")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -stdlib=libc++")
 add_compile_options(-nostdinc++)
 add_compile_options(-std=c++14)
-link_libraries("-Wl,-rpath=${IRODS_EXTERNALS_FULLPATH_CLANG_RUNTIME}/lib" c++abi)
-include_directories(${IRODS_EXTERNALS_FULLPATH_CLANG}/include/c++/v1)
+link_libraries(
+    "-Wl,-rpath=${IRODS_EXTERNALS_FULLPATH_CLANG_RUNTIME}/lib"
+    "-Wl,-rpath=${IRODS_EXTERNALS_FULLPATH_FMT}/lib"
+    ${IRODS_EXTERNALS_FULLPATH_FMT}/lib/libfmt.so
+    c++abi)
+include_directories(
+    ${IRODS_EXTERNALS_FULLPATH_CLANG}/include/c++/v1
+    ${IRODS_EXTERNALS_FULLPATH_FMT}/include)
 
 set(
   IRODS_AUDIT_PLUGIN_LOCKING_SERVER_COMPILE_DEFINITIONS
