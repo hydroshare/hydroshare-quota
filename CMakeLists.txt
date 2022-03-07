@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5.0 FATAL_ERROR) #CPACK_DEBIAN_<COMPONENT>_PACKAGE_NAME
 
-find_package(IRODS 4.2.8 EXACT REQUIRED)
+find_package(IRODS 4.2.11 EXACT REQUIRED)
 
 set(CMAKE_C_COMPILER ${IRODS_EXTERNALS_FULLPATH_CLANG}/bin/clang)
 set(CMAKE_CXX_COMPILER ${IRODS_EXTERNALS_FULLPATH_CLANG}/bin/clang++)
@@ -35,8 +35,6 @@ macro(IRODS_MACRO_SET_AND_CHECK_DEPENDENCY_FULL_PATH DEPENDENCY_NAME DEPENDENCY_
   set(IRODS_EXTERNALS_FULLPATH_${DEPENDENCY_NAME} ${IRODS_EXTERNALS_PACKAGE_ROOT}/${DEPENDENCY_SUBDIRECTORY})
 endmacro()
 
-IRODS_MACRO_SET_AND_CHECK_DEPENDENCY_FULL_PATH(QPID qpid-with-proton0.34-2)
-
 set(CMAKE_C_COMPILER ${IRODS_EXTERNALS_FULLPATH_CLANG}/bin/clang)
 set(CMAKE_CXX_COMPILER ${IRODS_EXTERNALS_FULLPATH_CLANG}/bin/clang++)
 
@@ -47,8 +45,14 @@ set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -stdlib=libc++")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -stdlib=libc++")
 add_compile_options(-nostdinc++)
 add_compile_options(-std=c++14)
-link_libraries(c++abi)
-include_directories(${IRODS_EXTERNALS_FULLPATH_CLANG}/include/c++/v1)
+link_libraries(
+    "-Wl,-rpath=${IRODS_EXTERNALS_FULLPATH_CLANG_RUNTIME}/lib"
+    "-Wl,-rpath=${IRODS_EXTERNALS_FULLPATH_FMT}/lib"
+    ${IRODS_EXTERNALS_FULLPATH_FMT}/lib/libfmt.so
+    c++abi)
+include_directories(
+    ${IRODS_EXTERNALS_FULLPATH_CLANG}/include/c++/v1
+    ${IRODS_EXTERNALS_FULLPATH_FMT}/include)
 
 set(
   IRODS_AUDIT_PLUGIN_LOCKING_SERVER_COMPILE_DEFINITIONS
@@ -79,18 +83,13 @@ set(
       ${PLUGIN1}
       PRIVATE
       /usr/include/irods
-      ${IRODS_EXTERNALS_FULLPATH_QPID}/include
       ${IRODS_EXTERNALS_FULLPATH_BOOST}/include
       ${IRODS_EXTERNALS_FULLPATH_JSON}/include
-      ${IRODS_EXTERNALS_FULLPATH_ARCHIVE}/include
       )
 
   target_link_libraries(
       ${PLUGIN1}
       PRIVATE
-      ${IRODS_EXTERNALS_FULLPATH_BOOST}/lib/libboost_filesystem.so
-      ${IRODS_EXTERNALS_FULLPATH_BOOST}/lib/libboost_system.so
-      ${IRODS_EXTERNALS_FULLPATH_ARCHIVE}/lib/libarchive.so
       ${OPENSSL_CRYPTO_LIBRARY}
       curl
       )
@@ -123,18 +122,13 @@ set(
       ${PLUGIN2}
       PRIVATE
       /usr/include/irods
-      ${IRODS_EXTERNALS_FULLPATH_QPID}/include
       ${IRODS_EXTERNALS_FULLPATH_BOOST}/include
       ${IRODS_EXTERNALS_FULLPATH_JSON}/include
-      ${IRODS_EXTERNALS_FULLPATH_ARCHIVE}/include
       )
 
   target_link_libraries(
       ${PLUGIN2}
       PRIVATE
-      ${IRODS_EXTERNALS_FULLPATH_BOOST}/lib/libboost_filesystem.so
-      ${IRODS_EXTERNALS_FULLPATH_BOOST}/lib/libboost_system.so
-      ${IRODS_EXTERNALS_FULLPATH_ARCHIVE}/lib/libarchive.so
       ${OPENSSL_CRYPTO_LIBRARY}
       curl
       )
@@ -167,18 +161,13 @@ set(
       ${PLUGIN3}
       PRIVATE
       /usr/include/irods
-      ${IRODS_EXTERNALS_FULLPATH_QPID}/include
       ${IRODS_EXTERNALS_FULLPATH_BOOST}/include
       ${IRODS_EXTERNALS_FULLPATH_JSON}/include
-      ${IRODS_EXTERNALS_FULLPATH_ARCHIVE}/include
       )
 
   target_link_libraries(
       ${PLUGIN3}
       PRIVATE
-      ${IRODS_EXTERNALS_FULLPATH_BOOST}/lib/libboost_filesystem.so
-      ${IRODS_EXTERNALS_FULLPATH_BOOST}/lib/libboost_system.so
-      ${IRODS_EXTERNALS_FULLPATH_ARCHIVE}/lib/libarchive.so
       ${OPENSSL_CRYPTO_LIBRARY}
       curl
       )
@@ -211,18 +200,13 @@ set(
       ${PLUGIN4}
       PRIVATE
       /usr/include/irods
-      ${IRODS_EXTERNALS_FULLPATH_QPID}/include
       ${IRODS_EXTERNALS_FULLPATH_BOOST}/include
       ${IRODS_EXTERNALS_FULLPATH_JSON}/include
-      ${IRODS_EXTERNALS_FULLPATH_ARCHIVE}/include
       )
 
   target_link_libraries(
       ${PLUGIN4}
       PRIVATE
-      ${IRODS_EXTERNALS_FULLPATH_BOOST}/lib/libboost_filesystem.so
-      ${IRODS_EXTERNALS_FULLPATH_BOOST}/lib/libboost_system.so
-      ${IRODS_EXTERNALS_FULLPATH_ARCHIVE}/lib/libarchive.so
       ${OPENSSL_CRYPTO_LIBRARY}
       curl
       )
@@ -255,18 +239,13 @@ set(
       ${PLUGIN5}
       PRIVATE
       /usr/include/irods
-      ${IRODS_EXTERNALS_FULLPATH_QPID}/include
       ${IRODS_EXTERNALS_FULLPATH_BOOST}/include
       ${IRODS_EXTERNALS_FULLPATH_JSON}/include
-      ${IRODS_EXTERNALS_FULLPATH_ARCHIVE}/include
       )
 
   target_link_libraries(
       ${PLUGIN5}
       PRIVATE
-      ${IRODS_EXTERNALS_FULLPATH_BOOST}/lib/libboost_filesystem.so
-      ${IRODS_EXTERNALS_FULLPATH_BOOST}/lib/libboost_system.so
-      ${IRODS_EXTERNALS_FULLPATH_ARCHIVE}/lib/libarchive.so
       ${OPENSSL_CRYPTO_LIBRARY}
       curl
       )

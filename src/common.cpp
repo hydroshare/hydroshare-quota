@@ -1,3 +1,9 @@
+#include <irods/irods_query.hpp>
+#include <irods/filesystem.hpp>
+#include <irods/rodsErrorTable.h>
+
+#include <fmt/format.h>
+
 rcComm_t *conn;
 rodsEnv myEnv;
 
@@ -583,60 +589,34 @@ char * getUserAVU( char *name, char *attrName) {
 //---------------------------------------------------------
 
 long long getRodsFileSize(char *srcPath) {
+    namespace fs = irods::experimental::filesystem;
 
-    int status;
-    genQueryOut_t *genQueryOut = NULL;
-    char myColl[MAX_NAME_LEN], myData[MAX_NAME_LEN];
-    char condStr[MAX_NAME_LEN];
-    int queryFlags;
+    try {
+        const fs::path path = srcPath;
+        const auto gql = fmt::format("select DATA_SIZE where COLL_NAME = '{}' and DATA_NAME = '{}'",
+                                     path.parent_path().c_str(),
+                                     path.object_name().c_str());
 
-    genQueryInp_t genQueryInp;
-    initCondForLs( &genQueryInp );
-
-    rodsArguments_t rodsArgs;
-    memset( &rodsArgs, 0, sizeof( rodsArguments_t ) );
-    rodsArgs.longOption = True;
-
-    queryFlags = setQueryFlag( &rodsArgs );
-    setQueryInpForData( queryFlags, &genQueryInp );
-    genQueryInp.maxRows = MAX_SQL_ROWS;
-
-    memset( myColl, 0, MAX_NAME_LEN );
-    memset( myData, 0, MAX_NAME_LEN );
-
-    if ( ( status = splitPathByKey(srcPath, myColl, MAX_NAME_LEN, myData, MAX_NAME_LEN, '/' ) ) < 0 ) {
-        rodsLogError(LOG_ERROR, status, "rodsFileSize: splitPathByKey for %s error, status = %d", srcPath, status);
-        return status;
-    }
-
-    clearInxVal( &genQueryInp.sqlCondInp );
-    snprintf( condStr, MAX_NAME_LEN, "='%s'", myColl );
-    addInxVal( &genQueryInp.sqlCondInp, COL_COLL_NAME, condStr );
-    snprintf( condStr, MAX_NAME_LEN, "='%s'", myData );
-    addInxVal( &genQueryInp.sqlCondInp, COL_DATA_NAME, condStr );
-
-    status =  rcGenQuery( conn, &genQueryInp, &genQueryOut );
-
-    if ( status < 0 ) {
-        if ( status == CAT_NO_ROWS_FOUND ) {
-            rodsLog( LOG_ERROR, "%s does not exist or user lacks access permission", srcPath );
+        for (auto&& row : irods::query{conn, gql}) {
+            return std::stoll(row[0]);
         }
-        else {
-            rodsLogError( LOG_ERROR, status, "rodsFileSize: rcGenQuery error for %s", srcPath );
-        }
-        return status;
+
+        // Data object "srcPath" was not found.
+        rodsLog(LOG_ERROR, "%s: %s does not exist or user lacks access permission", __func__, srcPath);
+        return CAT_NO_ROWS_FOUND;
     }
-
-    sqlResult_t *dataSize = 0;
-
-    char *tmpDataId = 0;
-
-    if ( ( dataSize = getSqlResultByInx( genQueryOut, COL_DATA_SIZE ) ) == NULL ) {
-        rodsLog( LOG_ERROR, "rodsFileSize: getSqlResultByInx for COL_DATA_SIZE failed" );
-        return UNMATCHED_KEY_OR_INDEX;
+    catch (const fs::filesystem_error& e) {
+        rodsLog(LOG_ERROR, "%s: query error for %s - [error code=%d]", __func__, srcPath, e.code().value());
+        return e.code().value();
     }
-
-    return strtoll(&dataSize->value[0], 0, 0);
+    catch (const irods::exception& e) {
+        rodsLog(LOG_ERROR, "%s: query error for %s - [error code=%d]", __func__, srcPath, e.code());
+        return e.code();
+    }
+    catch (...) {
+        rodsLog(LOG_ERROR, "%s: query error for %s - [error code=%d]", __func__, srcPath, SYS_UNKNOWN_ERROR);
+        return SYS_UNKNOWN_ERROR;
+    }
 }
 
 //---------------------------------------------------------
