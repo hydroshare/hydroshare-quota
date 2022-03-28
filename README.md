@@ -1,5 +1,11 @@
+Mar 2022,
+
+* Version 4.2.11
+* Refector library imports
+
 Jan 2021,
 
+* Version 4.2.8
 + Migrate from jansson to nlohmann/json for irods-devel 4.2.8
 
 Jan 2019,
