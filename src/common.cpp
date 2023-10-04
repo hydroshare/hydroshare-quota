@@ -40,26 +40,7 @@ void _debug(long long val) {
 
 //---------------------------------------------------------
 void callRestAPI(char * user, char *pass, char *url) {
-  CURL *curl;
-  CURLcode res;
-
-  rodsLog(LOG_NOTICE, "url: %s\n", url);
-
-  curl_global_init(CURL_GLOBAL_ALL);
-  curl = curl_easy_init();
-  if(curl) {
-    curl_easy_setopt(curl, CURLOPT_URL, url);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "");
-    res = curl_easy_perform(curl);
-    if(res != CURLE_OK) {
-    	rodsLog(LOG_ERROR, "curl_easy_perform() failed: %s", curl_easy_strerror(res));
-    }
-    curl_easy_cleanup(curl);
-    curl_global_cleanup();
-  }
-  else {
-    rodsLog(LOG_ERROR, "cannot init curl");
-  }
+    // Test not calling Hydroshare restAPI
 }
 
 //---------------------------------------------------------
