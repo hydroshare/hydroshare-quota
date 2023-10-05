@@ -1,3 +1,7 @@
+Oct 2023,
+
++ Place msiHSRemoveFile on the delay queue in hydroshare.re (no change to the microservices)
+
 Mar 2022,
 
 + Version 4.2.11

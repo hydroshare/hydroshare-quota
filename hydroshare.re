@@ -14,7 +14,9 @@
 
 # catch "irm" command
 acDataDeletePolicy () {
-    msiHSRemoveFile($objPath, "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated", "hsuser", "dummy", "local.hs.org/hsapi/_internal/update_quota_usage/"); 
+    delay("<PLUSET>1s</PLUSET>") {
+        msiHSRemoveFile($objPath, "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated", "hsuser", "dummy", "local.hs.org/hsapi/_internal/update_quota_usage/");
+    }
 }
 
 # catch "icp" command
