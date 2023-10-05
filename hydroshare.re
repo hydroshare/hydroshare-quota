@@ -14,8 +14,9 @@
 
 # catch "irm" command
 acDataDeletePolicy () {
+    *logical_path = $objPath
     delay("<PLUSET>1s</PLUSET>") {
-        msiHSRemoveFile($objPath, "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated", "hsuser", "dummy", "local.hs.org/hsapi/_internal/update_quota_usage/");
+        msiHSRemoveFile(*logical_path, "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated", "hsuser", "dummy", "local.hs.org/hsapi/_internal/update_quota_usage/");
     }
 }
 
