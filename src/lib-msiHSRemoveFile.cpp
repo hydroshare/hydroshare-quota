@@ -48,6 +48,7 @@ int msiHSRemoveFile(msParam_t* _string_param,
                     msParam_t* _string_param5,
                     msParam_t* _string_param6,
                     msParam_t* _string_param7,
+                    msParam_t* _string_param8,
                     ruleExecInfo_t* _rei ) {
 
     char *filePath;
@@ -73,26 +74,67 @@ int msiHSRemoveFile(msParam_t* _string_param,
         return result;
     }
 
-    char quotaHolder[MAX_NAME_LEN];
+    if (!_string_param8) {
+        rodsLog(LOG_ERROR, "%s: missing quota holder username", __func__);
+        return SYS_INVALID_INPUT_PARAM;
+    }
+
+    char* payload = parseMspForStr(_string_param8);
+    if (!payload) {
+        rodsLog(LOG_ERROR, "%s: could not extract quota holder username and data size from MsParam", __func__);
+        return SYS_INVALID_INPUT_PARAM;
+    }
+
+    const std::string quota_holder_and_data_size = payload;
+    if (quota_holder_and_data_size.empty()) {
+        rodsLog(LOG_ERROR, "%s: missing quota holder username and data size. string is empty", __func__);
+        return SYS_INVALID_INPUT_PARAM;
+    }
+
+    const auto semicolon_pos = quota_holder_and_data_size.find(';');
+    if (semicolon_pos == std::string::npos) {
+        rodsLog(LOG_ERROR, "%s: missing semicolon delimiter in final input argument. expected [<quota_holder_username>;<data_size>]", __func__);
+        return SYS_INVALID_INPUT_PARAM;
+    }
+
+    const auto data_size_pos = semicolon_pos + 1;
+    if (data_size_pos == std::string::npos) {
+        rodsLog(LOG_ERROR, "%s: missing data size in final input argument. expected [<quota_holder_username>;<data_size>]", __func__);
+        return SYS_INVALID_INPUT_PARAM;
+    }
+
+    auto quotaHolder = quota_holder_and_data_size.substr(0, semicolon_pos);
+    if (quotaHolder.empty()) {
+        rodsLog(LOG_ERROR, "%s: quota holder username is empty", __func__);
+        return SYS_INVALID_INPUT_PARAM;
+    }
+
+    auto dataSize = quota_holder_and_data_size.substr(data_size_pos);
+    if (dataSize.empty()) {
+        rodsLog(LOG_ERROR, "%s: data size is empty", __func__);
+        return SYS_INVALID_INPUT_PARAM;
+    }
+
+    long long data_size = 0;
+    try {
+        data_size = std::stoll(dataSize);
+    }
+    catch (const std::exception& e) {
+        rodsLog(LOG_ERROR, "%s: could not parse data size string [%s] into integer", __func__, dataSize.c_str());
+        return SYS_INVALID_INPUT_PARAM;
+    }
 
     rodsOpen();
 
     if (strstr(filePath, rootDir) == filePath) {
-        bool haveQuotaHolder = getParentQuotaHolder(filePath, quotaHolderAVU, quotaHolder);
-
-        if (haveQuotaHolder) {
-            result = decreaseUsage(filePath, bagsPath, quotaHolder);
-            callRestAPI(user, pass, concat(concat(concat(concat(concat(concat(concat("https://", user), ":"), pass), "@"), url), quotaHolder), "/"));
-        }
-        else {
-            rodsLog(LOG_ERROR, "msiHSRemoteFile: file %s has no quota Holder", filePath);
-        }
+        result = decreaseUsage(data_size, bagsPath, &quotaHolder[0]);
+        callRestAPI(user, pass, concat(concat(concat(concat(concat(concat(concat("https://", user), ":"), pass), "@"), url), quotaHolder.c_str()), "/"));
     }
     else {
         char *tmp = strpart(filePath, "/", 4);
-        strcpy(quotaHolder, tmp); delete[] tmp;
-        result = decreaseUsage(filePath, bagsPath, quotaHolder);
-	callRestAPI(user, pass, concat(concat(concat(concat(concat(concat(concat("https://", user), ":"), pass), "@"), url), quotaHolder), "/"));
+        strcpy(&quotaHolder[0], tmp); delete[] tmp;
+        result = decreaseUsage(data_size, bagsPath, &quotaHolder[0]);
+        callRestAPI(user, pass, concat(concat(concat(concat(concat(concat(concat("https://", user), ":"), pass), "@"), url), quotaHolder.c_str()), "/"));
     }
 
     rodsClose();
@@ -109,8 +151,9 @@ int msiHSRemoveFile(msParam_t* _string_param,
 
 extern "C"
 irods::ms_table_entry* plugin_factory() {
-    irods::ms_table_entry* msvc = new irods::ms_table_entry(7);
+    irods::ms_table_entry* msvc = new irods::ms_table_entry(8);
     msvc->add_operation<
+        msParam_t*,
         msParam_t*,
         msParam_t*,
         msParam_t*,
@@ -120,6 +163,7 @@ irods::ms_table_entry* plugin_factory() {
         msParam_t*,
         ruleExecInfo_t*>("msiHSRemoveFile",
                          std::function<int(
+                             msParam_t*,
                              msParam_t*,
                              msParam_t*,
                              msParam_t*,

@@ -683,9 +683,8 @@ bool getParentQuotaHolder(char *dirPath, char * quotaHolderAVU, char * quotaHold
 }
 
 //---------------------------------------------------------
-int decreaseUsage(char * filePath, char * bags, char * oldOwner) {
+int decreaseUsage(long long fileSize, char * bags, char * oldOwner) {
 
-    long long fileSize = getRodsFileSize(filePath);
     if (fileSize <= 0) return fileSize;
 
     char *avuOwner = concat(oldOwner, usageSize);
