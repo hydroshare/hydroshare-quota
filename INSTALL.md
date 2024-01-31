@@ -14,7 +14,7 @@ B. From RPM file
 
 C. From source code
 
-* `git clone https://github.com/hydroshare/hydroshare-quota.git	
+* `git clone https://github.com/hydroshare/hydroshare-quota.git`
 * `cd hydroshare-quota`
 * Modify the iRODS version in the line number 3 in the file: CMakeLists.txt to match with the version of the current iRODS server if needed. The current supported version is 4.2.4
 * Use cmake on irods-externals-cmake package to run: cmake . 
