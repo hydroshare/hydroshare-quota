@@ -1,43 +1,35 @@
-Mar 2022,
+# HydroShare Quota Management iRODS Microservices
 
-+ Version 4.2.11
-+ Refector library imports
+## Installation
 
-Jan 2021,
+For installation instructions, see the [INSTALL](INSTALL.md) document.
 
-+ Version 4.2.8
-+ Migrate from jansson to nlohmann/json for irods-devel 4.2.8
+## Additional Considerations
 
-Jan 2019,
+The msiHSRemoveFile microservices now depends on the [iRODS delay queue](https://irods.org/uploads/2022/Russell-Draughn-iRODS-iRODS_Delay_Server_Migration-slides.pdf) and the [iRODS Rule Engine Plugin for Python](https://github.com/irods/irods_rule_engine_plugin_python).
 
-+ Fix bug for REST API
-+ Change parameter format on  configuration file (hydroshare.re) 
+### Delay Queue Considerations
 
-Dec 2018,
+By default, iRODS configures the delay queue for parallel execution. Because these microservices access running quota totals without a locking mechanism, the microservices must be executed single threaded. This is accomplished by the following settings in `/etc/server_config.json`.
 
-+ Version 1.2.0
-+ Support HydroShare REST API to send quota update message to HydroShare core
-+ Update INSTALL document
+#### iRODS 4.2.x
 
-Feb 2018,
+```
+"maximum_number_of_concurrent_rule_engine_server_processes": 1
+```
 
-+ Version 1.1.0
-+ Support imv (commented out)
-+ Support iRODS user home directory on Federated iRODS Server
-+ Support RPM download
+#### iRODS 4.3.x
 
-Jan 2018,
+```
+"number_of_concurrent_delay_rule_executors": 1
+```
 
-+ Get/Set user's usage and user's quota on the "bags" Collection.
+### Rule Engine Plugin for Python Considerations
 
-Sep 2017,
+The Python Rule Engine Plugin (PREP) should be installed via your [plaform package manager](https://irods.org/download/).
 
-+ Update reScanRootDir
+The Python Rule Engine Plugin configuration instuctions are [here](https://github.com/irods/irods_rule_engine_plugin_python?tab=readme-ov-file#configuration).
 
-Aug 2017,
+More helpful information can be found [here](https://slides.com/danielmoore-5/2020-ku_leuven-irods-training-python-rule-engine).
 
-+ Version 1.0.0
-
--Phuong Doan-
-phuongdm79@gmail.com
-
+In `/etc/irods/server_config.json`, the Python Rule Engine Plugin (PREP) should be configured **following** the Native Rule Engine Plugin (NREP) and **before** the C++ default policy plugin.
