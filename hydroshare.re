@@ -14,7 +14,27 @@
 
 # catch "irm" command
 acDataDeletePolicy () {
-    msiHSRemoveFile($objPath, "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated", "hsuser", "dummy", "local.hs.org/hsapi/_internal/update_quota_usage/"); 
+    *logicalPath = $objPath;
+    *quotaOwner = "";
+    *collName = "";
+    *dataName = "";
+    *dataSize = "";
+    writeLine("serverLog", "=== Within acDataDeletePolicy for [*logicalPath].");
+    getQuotaOwner(*logicalPath, *quotaOwner);
+    writeLine("serverLog", "The quota owner is [*quotaOwner].");
+    msiSplitPath(*logicalPath, *collName, *dataName)
+    writeLine("serverLog", "The collection name is [*collName].");
+    writeLine("serverLog", "The data object name is [*dataName].");
+    foreach (*row in select DATA_SIZE where COLL_NAME = "*collName" and DATA_NAME = "*dataName" and DATA_REPL_STATUS = "1") {
+        *dataSize = *row.DATA_SIZE;
+    }
+    writeLine("serverLog", "The data object size is [*dataSize].");
+    *ownerAndSize = *quotaOwner ++ ";" ++ *dataSize
+    writeLine("serverLog", "Combined quota owner and data size is [*ownerAndSize].");
+    delay("<PLUSET>5s</PLUSET><INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME>") {
+        msiHSRemoveFile(*logicalPath, "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated", "hsuser", "dummy", "local.hs.org/hsapi/_internal/update_quota_usage/", *ownerAndSize);
+    }
+    writeLine("serverLog", "=== Exiting acDataDeletePolicy after placing msiHSRemoveFile on the delay queue.");
 }
 
 # catch "icp" command
