@@ -10,7 +10,7 @@ The msiHSRemoveFile microservices now depends on the [iRODS delay queue](https:/
 
 ### Delay Queue Considerations
 
-By default, iRODS configures the delay queue for parallel execution. Because these microservices access running quota totals without a locking mechanism, the microservices must be executed single threaded. This is accomplished by the following settings in `/etc/server_config.json`.
+By default, iRODS configures the delay queue for parallel execution. Because these microservices access running quota totals without a locking mechanism, the microservices must be executed single threaded. This is accomplished by the following settings in `/etc/irods/server_config.json`.
 
 #### iRODS 4.2.x
 
