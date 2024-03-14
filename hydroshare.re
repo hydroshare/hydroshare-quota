@@ -22,6 +22,13 @@ acPostProcForCopy () {
     msiHSAddNewFile($objPath, "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated", "hsuser", "dummy", "local.hs.org/hsapi/_internal/update_quota_usage/"); 
 }
 
+# catch other create commands including "ibun"
+# documentation is limited https://irods.org/uploads/2015/01/irods4-microservices-book-web.pdf
+# but I think we might just simply be able to use acPostProcForCreate to catch zipping of files
+acPostProcForCreate () {
+    msiHSAddNewFile($objPath, "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated", "hsuser", "dummy", "local.hs.org/hsapi/_internal/update_quota_usage/"); 
+}
+
 # catch "imv" command 
 #acPostProcForObjRename (*sourceObject, *destObject) {
 #    msiHSRemoveFile(*sourceObject, "/hydroshareZone/home/cuahsiDataProxy/bags", "quotaUserName", "Federated", "hsuser", "dummy", "local.hs.org/hsapi/_internal/update_quota_usage/");
