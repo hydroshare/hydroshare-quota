@@ -25,11 +25,11 @@ RUN yum install -y sudo python3 centos-release-scl
 RUN yum install -y python36-distro devtoolset-10-gcc devtoolset-10-gcc-c++
 RUN yum install -y irods-externals-*
 # https://github.com/irods/externals?tab=readme-ov-file#rhel--centos-7
-# RUN git clone https://github.com/irods/externals.git &&\
-# cd externals &&\
-# ./install_prerequisites.py &&\
-# scl enable devtoolset-10 bash
-# make
+RUN git clone https://github.com/irods/externals.git &&\
+    cd externals &&\
+    ./install_prerequisites.py &&\
+    scl enable devtoolset-10 bash
+RUN make
 RUN yum install -y openssl-devel libcurl-devel
 RUN yum install -y irods-devel-4.2.6-1
 
