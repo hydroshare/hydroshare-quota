@@ -24,19 +24,21 @@ RUN yum makecache -y fast &&\
 RUN yum install -y sudo python3 centos-release-scl
 RUN yum install -y python36-distro devtoolset-10-gcc devtoolset-10-gcc-c++
 RUN yum install -y irods-externals-*
+WORKDIR /opt
 # https://github.com/irods/externals?tab=readme-ov-file#rhel--centos-7
 RUN git clone https://github.com/irods/externals.git &&\
     cd externals &&\
     ./install_prerequisites.py &&\
     scl enable devtoolset-10 bash
+WORKDIR /opt/externals
 RUN make
 RUN yum install -y openssl-devel libcurl-devel
-RUN yum install -y irods-devel-4.2.6-1
+RUN yum install -y irods-devel-4.2.11
 
 COPY . /hydroshare-quota
 
 WORKDIR /hydroshare-quota
-RUN /opt/irods-externals/cmake3.11.4-0/bin/cmake .
+RUN /opt/externals/cmake3.11.4-0/bin/cmake .
 RUN make package
 
 # save hydroshare-quota-microservices-centos7-x86_64.rpm
