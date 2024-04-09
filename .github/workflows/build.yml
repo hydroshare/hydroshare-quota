@@ -14,6 +14,8 @@ jobs:
       # https://github.com/marketplace/actions/paths-changes-filter#conditional-execution
       id: filter
       with:
+        # detect changes against last commit
+        base: ${{ github.ref }}
         filters: |
             Dockerfile: Dockerfile
             Dockerfile-deb: Dockerfile-deb
