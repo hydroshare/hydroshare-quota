@@ -20,13 +20,6 @@ COPY . /hydroshare-quota
 # vim CMakeLists.txt. # edit 4.3.1
 RUN /opt/irods-externals/cmake3.21.4-0/bin/cmake .
 RUN mkdir -p DEBAIN && touch DEBIAN/control
-# RUN cat <<EOT >> DEBIAN/control \
-#     Package: hydroshare-quota \
-#     Version: 999 \
-#     Maintainer: CUAHSI \
-#     Architecture: all \
-#     Description: hydroshare-quota \
-#     EOT
 SHELL ["/bin/bash", "-c"]
 RUN echo $'Package: hydroshare-quota \n\
 Version: 999 \n\
