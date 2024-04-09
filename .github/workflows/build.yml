@@ -3,6 +3,20 @@ name: Test build
 on: push
 
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+        # Expose matched filters as job 'variants' output variable
+        image_variants: ${{ steps.filter.outputs.changes }}
+    steps:
+    - uses: actions/checkout@v3
+    - uses: dorny/paths-filter@v2
+      # https://github.com/marketplace/actions/paths-changes-filter#conditional-execution
+      id: filter
+      with:
+        filters: |
+            Dockerfile: Dockerfile
+            Dockerfile-deb: Dockerfile-deb
   build:
     name: Setup, Build
     runs-on: ubuntu-latest
@@ -11,9 +25,7 @@ jobs:
         max-parallel: 6
         # select a core set of images to build
         matrix:
-          IMAGE_VARIANT:
-            - Dockerfile
-            - Dockerfile-deb
+          IMAGE_VARIANT: ${{ fromJSON(needs.detect-changes.outputs.image_variants) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
