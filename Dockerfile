@@ -1,44 +1,29 @@
 FROM centos:centos7.6.1810
-RUN yum -y install epel-release &&\
-    yum makecache -y &&\
-    yum clean all &&\
+RUN yum makecache -y && \
+    yum clean all&& \
     yum update -y
 RUN yum install -y epel-release \
-    yum-utils \
-    emacs \
-    vim-enhanced \
-    expect \
-    wget \
-    git
-
-RUN yum install -y epel-release \
-    pwgen \
-    jq
-
-RUN rpm --import https://packages.irods.org/irods-signing-key.asc
-RUN wget -qO - https://packages.irods.org/renci-irods.yum.repo | \
-    tee /etc/yum.repos.d/renci-irods.yum.repo
-RUN yum makecache -y fast &&\
+                   yum-utils \
+                   vim-enhanced \
+                   expect \
+                   wget \
+                   git
+RUN yum install -y pwgen \
+                   jq
+RUN rpm --import https://packages.irods.org/irods-signing-key.asc && \
+    wget -qO - https://packages.irods.org/renci-irods.yum.repo | tee /etc/yum.repos.d/renci-irods.yum.repo
+RUN yum makecache -y && \
     yum group install -y "Development Tools" --setopt=group_package_types=mandatory,default,optional
-
-RUN yum install -y sudo python3 centos-release-scl
-RUN yum install -y python36-distro devtoolset-10-gcc devtoolset-10-gcc-c++
-RUN yum install -y irods-externals-*
-WORKDIR /opt
-# https://github.com/irods/externals?tab=readme-ov-file#rhel--centos-7
-RUN git clone https://github.com/irods/externals.git &&\
-    cd externals &&\
-    ./install_prerequisites.py &&\
-    scl enable devtoolset-10 bash
-WORKDIR /opt/externals
-RUN make
+RUN yum install -y --skip-broken irods-externals-*
 RUN yum install -y openssl-devel libcurl-devel
 RUN yum install -y irods-devel-4.2.11
-
 COPY . /hydroshare-quota
-
-WORKDIR /hydroshare-quota
-RUN /opt/externals/cmake3.11.4-0/bin/cmake .
-RUN make package
-
-# save hydroshare-quota-microservices-centos7-x86_64.rpm
+# CMakeLists.txt must match iRODS version specified
+# cmake3.21 for iRODS 4.3.x
+# cmake3.11.4-0 for iRODS 4.2.x
+WORKDIR /hydroshare-quota/
+RUN /opt/irods-externals/cmake3.11.4-0/bin/cmake . 2>&1 | tee cmake.stdout
+RUN cat cmake.stdout
+RUN make package 2>&1 | tee make.stdout
+# Investigate for Rocky/RHEL 9
+RUN mv hydroshare-quota-microservices-centos7-x86_64.rpm /hydroshare-quota-microservices-centos7-x86_64.rpm
