@@ -26,4 +26,4 @@ RUN /opt/irods-externals/cmake3.11.4-0/bin/cmake . 2>&1 | tee cmake.stdout
 RUN cat cmake.stdout
 RUN make package 2>&1 | tee make.stdout
 # Investigate for Rocky/RHEL 9
-RUN mv hydroshare-quota-microservices-centos7-x86_64.rpm /hydroshare-quota-microservices-centos7-x86_64.rpm
+# RUN mv hydroshare-quota-microservices-centos7-x86_64.rpm /hydroshare-quota-microservices-centos7-x86_64.rpm

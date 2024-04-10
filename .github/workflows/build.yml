@@ -44,5 +44,5 @@ jobs:
         with:
           name: compiled-artifacts
           path: |
-            /*.rpm
-            /*.deb
+            hydroshare-quota/*.rpm
+            hydroshare-quota/*.deb

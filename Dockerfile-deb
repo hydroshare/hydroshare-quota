@@ -17,8 +17,11 @@ RUN git clone https://github.com/irods/externals.git &&\
     make
 
 COPY . /hydroshare-quota
-# vim CMakeLists.txt. # edit 4.3.1
-RUN /opt/irods-externals/cmake3.21.4-0/bin/cmake .
+# CMakeLists.txt must match iRODS version specified
+# cmake3.21 for iRODS 4.3.x
+# cmake3.11.4-0 for iRODS 4.2.x
+WORKDIR /hydroshare-quota
+RUN /opt/externals/cmake3.11.4-0/bin/cmake .
 RUN mkdir -p DEBAIN && touch DEBIAN/control
 SHELL ["/bin/bash", "-c"]
 RUN echo $'Package: hydroshare-quota \n\
@@ -27,7 +30,6 @@ Maintainer: CUAHSI \n\
 Architecture: all \n\
 Description: hydroshare-quota' > DEBIAN/control
 
-WORKDIR /hydroshare-quota
 RUN dpkg-deb --build hydroshare-quota
 
 # for local development:
