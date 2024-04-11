@@ -1,4 +1,4 @@
-FROM centos:centos7.6.1810
+FROM centos:centos7.6.1810 as builder
 RUN yum makecache -y && \
     yum clean all&& \
     yum update -y
@@ -27,3 +27,6 @@ RUN cat cmake.stdout
 RUN make package 2>&1 | tee make.stdout
 # Investigate for Rocky/RHEL 9
 RUN mkdir /output && mv *.rpm /output/
+
+FROM alpine
+COPY --from=builder /output /output
