@@ -42,8 +42,7 @@ jobs:
         with:
           context: .
           file: ${{ matrix.IMAGE_VARIANT }}
-          repository: quota-microservices
-          tags: latest
+          tags: quota-microservices:latest
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
