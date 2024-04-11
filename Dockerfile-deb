@@ -1,4 +1,4 @@
-FROM debian:bullseye
+FROM debian:bullseye as builder
 RUN apt-get update
 RUN apt-get install -y libcurl4-openssl-dev libssl-dev build-essential vim
 RUN apt-get install -y sudo git python3 python3-distro
@@ -39,3 +39,6 @@ RUN mkdir /output && mv hydroshare-quota.deb /output/
 # dpkg -i /root/hydroshare-quota.deb
 # chmod -R 775 /etc/irods
 # EOF
+
+FROM alpine
+COPY --from=builder /output /output
