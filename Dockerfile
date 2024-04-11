@@ -16,7 +16,7 @@ RUN yum makecache -y && \
     yum group install -y "Development Tools" --setopt=group_package_types=mandatory,default,optional
 RUN yum install -y --skip-broken irods-externals-*
 RUN yum install -y openssl-devel libcurl-devel
-RUN yum install -y irods-devel-4.2.11
+RUN yum install -y irods-devel-4.2.11-1
 COPY . /hydroshare-quota
 # CMakeLists.txt must match iRODS version specified. This file is under version control
 # cmake3.21 for iRODS 4.3.x
