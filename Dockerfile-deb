@@ -31,6 +31,7 @@ Architecture: all \n\
 Description: hydroshare-quota' > DEBIAN/control
 
 RUN dpkg-deb --build hydroshare-quota
+RUN mkdir /output && mv hydroshare-quota.deb /output/
 
 # for local development:
 # docker cp hydroshare-quota.deb data.local.org:/root/

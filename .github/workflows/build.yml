@@ -38,15 +38,22 @@ jobs:
         with:
           context: .
           file: ${{ matrix.IMAGE_VARIANT }}
+          tags: hydroshare/quota-microservices:${{ matrix.IMAGE_VARIANT }}
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Extract built package
+        uses: shrink/actions-docker-extract@v3
+        id: extract
+        with:
+          image: hydroshare/quota-microservices:${{ matrix.IMAGE_VARIANT }}
+          path: /output/
+          destination: output
       
       # Archive the built package
       - name: Archive artifacts
         uses: actions/upload-artifact@v4
         with:
           name: compiled-artifacts
-          path: |
-            hydroshare-quota/*.rpm
-            hydroshare-quota/*.deb
+          path: output
