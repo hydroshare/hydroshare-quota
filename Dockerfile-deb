@@ -17,7 +17,7 @@ RUN git clone https://github.com/irods/externals.git &&\
     make
 
 COPY . /hydroshare-quota
-# CMakeLists.txt must match iRODS version specified
+# CMakeLists.txt must match iRODS version specified. This file is under version control.
 # cmake3.21 for iRODS 4.3.x
 # cmake3.11.4-0 for iRODS 4.2.x
 WORKDIR /hydroshare-quota
