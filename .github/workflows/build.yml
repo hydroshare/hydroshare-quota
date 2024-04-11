@@ -38,6 +38,7 @@ jobs:
 
       - name: Build
         uses: docker/build-push-action@v5
+        if: ${{ matrix.IMAGE_VARIANT }} != '' && ${{ matrix.IMAGE_VARIANT }} != '[]'
         with:
           context: .
           file: ${{ matrix.IMAGE_VARIANT }}
