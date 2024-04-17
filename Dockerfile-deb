@@ -1,0 +1,44 @@
+FROM debian:bullseye as builder
+RUN apt-get update
+RUN apt-get install -y libcurl4-openssl-dev libssl-dev build-essential vim
+RUN apt-get install -y sudo git python3 python3-distro
+RUN apt-get install gnupg2 wget
+RUN wget -qO - https://packages.irods.org/irods-signing-key.asc | sudo apt-key add - &&\
+    echo "deb [arch=amd64] https://packages.irods.org/apt/ $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/renci-irods.list
+# apt-get update --allow-insecure-repositories
+RUN apt-get update --allow-unauthenticated
+RUN apt-get install -y irods-externals-*
+RUN apt-get install -y irods-dev
+WORKDIR /opt
+# https://github.com/irods/externals?tab=readme-ov-file#rhel--centos-7
+RUN git clone https://github.com/irods/externals.git &&\
+    cd externals &&\
+    ./install_prerequisites.py &&\
+    make
+
+COPY . /hydroshare-quota
+# CMakeLists.txt must match iRODS version specified. This file is under version control.
+# cmake3.21 for iRODS 4.3.x
+# cmake3.11.4-0 for iRODS 4.2.x
+WORKDIR /hydroshare-quota
+RUN /opt/externals/cmake3.11.4-0/bin/cmake .
+RUN mkdir -p DEBAIN && touch DEBIAN/control
+SHELL ["/bin/bash", "-c"]
+RUN echo $'Package: hydroshare-quota \n\
+Version: 999 \n\
+Maintainer: CUAHSI \n\
+Architecture: all \n\
+Description: hydroshare-quota' > DEBIAN/control
+
+RUN dpkg-deb --build hydroshare-quota
+RUN mkdir /output && mv hydroshare-quota.deb /output/
+
+# for local development:
+# docker cp hydroshare-quota.deb data.local.org:/root/
+# cat <<EOF | docker exec --interactive data.local.org sh
+# dpkg -i /root/hydroshare-quota.deb
+# chmod -R 775 /etc/irods
+# EOF
+
+FROM alpine
+COPY --from=builder /output /output
